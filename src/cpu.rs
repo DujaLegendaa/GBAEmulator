@@ -455,6 +455,128 @@ impl Z80 {
             0x7F => { // LD A,A
                 self.a = self.a;
             }
+
+            0xA0 => {
+                self.a &= self.b;
+                self.setZeroFlag(self.a);
+                self.setFlag(false,Flags::Sub);
+                self.setFlag(true,Flags::HCarry);
+                self.setFlag(false,Flags::Carry);
+            }
+            0xA1 => {
+                self.a &= self.c;
+                self.setZeroFlag(self.a);
+                self.setFlag(false,Flags::Sub);
+                self.setFlag(true,Flags::HCarry);
+                self.setFlag(false,Flags::Carry);
+            }
+            0xA2 => {
+                self.a &= self.d;
+                self.setZeroFlag(self.a);
+                self.setFlag(false,Flags::Sub);
+                self.setFlag(true,Flags::HCarry);
+                self.setFlag(false,Flags::Carry);
+            }
+            0xA3 => {
+                self.a &= self.e;
+                self.setZeroFlag(self.a);
+                self.setFlag(false,Flags::Sub);
+                self.setFlag(true,Flags::HCarry);
+                self.setFlag(false,Flags::Carry);
+            }
+            0xA4 => {
+                self.a &= self.h;
+                self.setZeroFlag(self.a);
+                self.setFlag(false,Flags::Sub);
+                self.setFlag(true,Flags::HCarry);
+                self.setFlag(false,Flags::Carry);
+            }
+            0xA5 => {
+                self.a &= self.l;
+                self.setZeroFlag(self.a);
+                self.setFlag(false,Flags::Sub);
+                self.setFlag(true,Flags::HCarry);
+                self.setFlag(false,Flags::Carry);
+            }
+            0xA6 => {
+                match self.cyclesLeft {
+                    2 => {}
+                    1 => {self.a &= self.readByte(self.getHL());
+                        self.setZeroFlag(self.a);
+                        self.setFlag(false,Flags::Sub);
+                        self.setFlag(true,Flags::HCarry);
+                        self.setFlag(false,Flags::Carry);}
+                    _ => {panic!("cycles left incorrect")}
+                }
+            }
+            0xA7 => {
+                self.a &= self.a;
+                self.setZeroFlag(self.a);
+                self.setFlag(false,Flags::Sub);
+                self.setFlag(true,Flags::HCarry);
+                self.setFlag(false,Flags::Carry);
+            }
+            0xA8 => {
+                self.a ^= self.b;
+                self.setZeroFlag(self.a);
+                self.setFlag(false,Flags::Sub);
+                self.setFlag(false,Flags::HCarry);
+                self.setFlag(false,Flags::Carry);
+            }
+            0xA9 => {
+                self.a ^= self.c;
+                self.setZeroFlag(self.a);
+                self.setFlag(false,Flags::Sub);
+                self.setFlag(false,Flags::HCarry);
+                self.setFlag(false,Flags::Carry);
+            }
+            0xAA => {
+                self.a ^= self.d;
+                self.setZeroFlag(self.a);
+                self.setFlag(false,Flags::Sub);
+                self.setFlag(false,Flags::HCarry);
+                self.setFlag(false,Flags::Carry);
+            }
+            0xAB => {
+                self.a ^= self.e;
+                self.setZeroFlag(self.a);
+                self.setFlag(false,Flags::Sub);
+                self.setFlag(false,Flags::HCarry);
+                self.setFlag(false,Flags::Carry);
+            }
+            0xAC => {
+                self.a ^= self.h;
+                self.setZeroFlag(self.a);
+                self.setFlag(false,Flags::Sub);
+                self.setFlag(false,Flags::HCarry);
+                self.setFlag(false,Flags::Carry);
+            }
+            0xAD => {
+                self.a ^= self.l;
+                self.setZeroFlag(self.a);
+                self.setFlag(false,Flags::Sub);
+                self.setFlag(false,Flags::HCarry);
+                self.setFlag(false,Flags::Carry);
+            }
+            0xAE => {
+                match self.cyclesLeft {
+                    2 => {}
+                    1 => {self.a ^= self.readByte(self.getHL());
+                        self.setZeroFlag(self.a);
+                        self.setFlag(false,Flags::Sub);
+                        self.setFlag(false,Flags::HCarry);
+                        self.setFlag(false,Flags::Carry);}
+                    _ => {panic!("cycles left incorrect")}
+                }
+            }
+            0xAF => {
+                self.a ^= self.a;
+                self.setZeroFlag(self.a);
+                self.setFlag(false,Flags::Sub);
+                self.setFlag(false,Flags::HCarry);
+                self.setFlag(false,Flags::Carry);
+            }
+            
             _ => panic!("Unknown opcode or not implemented"),
         }
         self.cyclesLeft -= 1;
