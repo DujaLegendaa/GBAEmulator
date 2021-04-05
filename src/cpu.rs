@@ -195,6 +195,58 @@ impl Z80 {
                 self.c = self.a;
             }
 
+
+            0x50 => {
+                self.d = self.b;
+            }
+            0x51 => {
+                self.d = self.c;
+            }
+            0x52 => {
+                self.d = self.d;
+            }
+            0x53 => {
+                self.d = self.e;
+            }
+            0x54 => {
+                self.d = self.h;
+            }
+            0x55 => {
+                self.d = self.l;
+            }
+            /*0x56 => {
+                
+            }
+            */
+            0x57 => {
+                self.d = self.a;
+            }
+            0x58 => {
+                self.e = self.b;
+            }
+            0x59 => {
+                self.e = self.c;
+            }
+            0x5A => {
+                self.e = self.d;
+            }
+            0x5B => {
+                self.e = self.e;
+            }
+            0x5C => {
+                self.e = self.h;
+            }
+            0x5D => {
+                self.e = self.l;
+            }
+            /*0x5E => {
+                self.e
+            }
+            */
+            0x5F => {
+                self.e = self.a;
+            }
+            
             _ => panic!("Unknown opcode or not implemented"),
         }
         self.cyclesLeft -= 1;
