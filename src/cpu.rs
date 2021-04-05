@@ -1,4 +1,5 @@
 use super::bit;
+use super::bus::{Bus};
 struct Z80{
     a: u8,
     f: u8,
@@ -9,7 +10,9 @@ struct Z80{
     h: u8,
     l: u8,
     sp: u16,
-    pc: u16
+    pc: u16,
+
+    bus: Bus
 }
 
 enum Flags {
@@ -37,7 +40,9 @@ impl Z80{
             h: 0,
             l: 0,
             sp: 0,
-            pc: 0
+            pc: 0,
+
+            bus: Bus::new(),
         }
     }
 
@@ -111,16 +116,16 @@ const nameVector: Vec<String> = vec![
 ];
 
 impl Z80 {
-    fn readByte() -> u8 {
+    fn readByte(&self, addr: u16) -> u8 {
         todo!("implement read byte");
     }
-    fn readBytes() -> u16 {
+    fn readBytes(&self, addr: u16) -> u16 {
         todo!("implement read bytes");
     }
-    fn writeByte() {
+    fn writeByte(&mut self, addr: u16, data: u8) {
         todo!("implement write byte");
     }
-    fn writeBytes() {
+    fn writeBytes(&mut self, addr: u16, data: u16) {
         todo!("implement write bytes");
     }
     fn executeInstrction(&mut self, opcode: u8) {
