@@ -25,4 +25,28 @@ impl Z80{
             pc: 0
         }
     }
+
+    fn getAF(&self) -> u16{
+        let mut af: u16;
+        af = ((self.a as u16)<<8) | (self.f as u16);
+        af
+    }
+
+    fn getBC(&self) -> u16{
+        let mut bc: u16;
+        bc = ((self.b as u16)<<8) | (self.c as u16);
+        bc
+    }
+
+    fn getDE(&self) -> u16{
+        let mut de: u16;
+        de = ((self.d as u16)<<8) | (self.e as u16);
+        de
+    }
+
+    fn getHL(&self) -> u16{
+        let mut hl: u16;
+        hl = ((self.h as u16)<<8) | (self.l as u16);
+        hl
+    }
 }
