@@ -1,0 +1,4 @@
+Pandocs: https://gbdev.io/pandocs/
+Opcode-Table: https://izik1.github.io/gbops/index.html
+Instructions: https://rgbds.gbdev.io/docs/v0.4.2/gbz80.7
+Development Guide: https://hacktix.github.io/GBEDG/
