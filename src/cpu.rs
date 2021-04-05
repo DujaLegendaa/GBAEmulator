@@ -675,49 +675,49 @@ impl Z80 {
                 self.setFlag(false,Flags::Carry);
             }
 
-            0xB0 => { // XOR A,B
+            0xB0 => { // OR A,B
                 self.a |= self.b;
                 self.setZeroFlag(self.a);
                 self.setFlag(false,Flags::Sub);
                 self.setFlag(false,Flags::HCarry);
                 self.setFlag(false,Flags::Carry);
             }
-            0xB1 => { // XOR A,C
+            0xB1 => { // OR A,C
                 self.a |= self.c;
                 self.setZeroFlag(self.a);
                 self.setFlag(false,Flags::Sub);
                 self.setFlag(false,Flags::HCarry);
                 self.setFlag(false,Flags::Carry);
             }
-            0xB2 => { // XOR A,D
+            0xB2 => { // OR A,D
                 self.a |= self.d;
                 self.setZeroFlag(self.a);
                 self.setFlag(false,Flags::Sub);
                 self.setFlag(false,Flags::HCarry);
                 self.setFlag(false,Flags::Carry);
             }
-            0xB3 => { // XOR A,E
+            0xB3 => { // OR A,E
                 self.a |= self.e;
                 self.setZeroFlag(self.a);
                 self.setFlag(false,Flags::Sub);
                 self.setFlag(false,Flags::HCarry);
                 self.setFlag(false,Flags::Carry);
             }
-            0xB4 => { // XOR A,H
+            0xB4 => { // OR A,H
                 self.a |= self.h;
                 self.setZeroFlag(self.a);
                 self.setFlag(false,Flags::Sub);
                 self.setFlag(false,Flags::HCarry);
                 self.setFlag(false,Flags::Carry);
             }
-            0xB5 => { // XOR A,L
+            0xB5 => { // OR A,L
                 self.a |= self.l;
                 self.setZeroFlag(self.a);
                 self.setFlag(false,Flags::Sub);
                 self.setFlag(false,Flags::HCarry);
                 self.setFlag(false,Flags::Carry);
             }
-            0xB6 => { // XOR A,(HL)
+            0xB6 => { // OR A,(HL)
                 match self.cyclesLeft {
                     2 => {}
                     1 => {self.a |= self.readByte(self.getHL());
@@ -728,7 +728,7 @@ impl Z80 {
                     _ => {panic!("cycles left incorrect")}
                 }
             }
-            0xB7 => { // XOR A,A
+            0xB7 => { // OR A,A
                 self.a |= self.a;
                 self.setZeroFlag(self.a);
                 self.setFlag(false,Flags::Sub);
