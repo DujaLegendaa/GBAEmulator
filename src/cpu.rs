@@ -252,141 +252,207 @@ impl Z80 {
                 self.c = self.l;
             },
             0x4E => { // LD C,(HL)
-                self.c = self.readByte(self.getHL());
+                match self.cyclesLeft {
+                    2 => {}
+                    1 => {self.c = self.readByte(self.getHL());}
+                    _ => {panic!("cycles left incorrect")}
+                }
             },
             0x4F => { // LD C,A
                 self.c = self.a;
             },
 
 
-            0x50 => {
+            0x50 => { // LD D,B
                 self.d = self.b;
             }
-            0x51 => {
+            0x51 => { // LD D,C
                 self.d = self.c;
             }
-            0x52 => {
+            0x52 => { // LD D,D
                 self.d = self.d;
             }
-            0x53 => {
+            0x53 => { // LD D,E
                 self.d = self.e;
             }
-            0x54 => {
+            0x54 => { // LD D,H
                 self.d = self.h;
             }
-            0x55 => {
+            0x55 => { // LD D,L
                 self.d = self.l;
             }
-            /*0x56 => {
-                
+            0x56 => { // LD D,(HL)
+                match self.cyclesLeft {
+                    2 => {}
+                    1 => {self.d = self.readByte(self.getHL());}
+                    _ => {panic!("cycles left incorrect")}
+                }
             }
-            */
-            0x57 => {
+            0x57 => { // LD D,A
                 self.d = self.a;
             }
-            0x58 => {
+            0x58 => { // LD E,B
                 self.e = self.b;
             }
-            0x59 => {
+            0x59 => { // LD E,C
                 self.e = self.c;
             }
-            0x5A => {
+            0x5A => { // LD E,D
                 self.e = self.d;
             }
-            0x5B => {
+            0x5B => { // LD E,E
                 self.e = self.e;
             }
-            0x5C => {
+            0x5C => { // LD E,H
                 self.e = self.h;
             }
-            0x5D => {
+            0x5D => { // LD E,L
                 self.e = self.l;
             }
-            /*0x5E => {
-                self.e
+            0x5E => { // LD E,(HL)
+                match self.cyclesLeft {
+                    2 => {}
+                    1 => {self.e = self.readByte(self.getHL());}
+                    _ => {panic!("cycles left incorrect")}
+                }
             }
-            */
-            0x5F => {
+            0x5F => { // LD E,A
                 self.e = self.a;
             }
 
-            0x60 => {
+            0x60 => { // LD H,B
                 self.h = self.b;
             }
-            0x61 => {
+            0x61 => { // LD H,C
                 self.h = self.c;
             }
-            0x62 => {
+            0x62 => { // LD H,D
                 self.h = self.d;
             }
-            0x63 => {
+            0x63 => { // LD H,E
                 self.h = self.e;
             }
-            0x64 => {
+            0x64 => { // LD H,H
                 self.h = self.h;
             }
-            0x65 => {
+            0x65 => { // LD H,L
                 self.h = self.l;
             }
-            /*
-            0x66 => {
-                self.h =
+            0x66 => { // LD H,(HL)
+                match self.cyclesLeft {
+                    2 => {}
+                    1 => {self.h = self.readByte(self.getHL());}
+                    _ => {panic!("cycles left incorrect")}
+                }
             }
-            */
-            0x67 => {
+            0x67 => { // LD H,A
                 self.h = self.a;
             }
-            0x68 => {
+            0x68 => { // LD L,B
                 self.l = self.b;
             }
-            0x69 => {
+            0x69 => { // LD L,C
                 self.l = self.c;
             }
-            0x6A => {
+            0x6A => { // LD L,D
                 self.l = self.d;
             }
-            0x6B => {
+            0x6B => { // LD L,E
                 self.l = self.e;
             }
-            0x6C => {
+            0x6C => { // LD L,H
                 self.l = self.h;
             }
-            0x6D => {
+            0x6D => { // LD L,L
                 self.l = self.l;
             }
-            /*
-            0x6E => {
-                self.l =
+            0x6E => { // LD L,(HL)
+                match self.cyclesLeft {
+                    2 => {}
+                    1 => {self.l = self.readByte(self.getHL());}
+                    _ => {panic!("cycles left incorrect")}
+                }
             }
-            */
-            0x6F => {
+            0x6F => { // LD L,A
                 self.l = self.a;
             }
 
-            0x78 => {
+            0x70 => { // LD (HL),B
+                match self.cyclesLeft {
+                    2 => {}
+                    1 => {self.writeByte(self.getHL(), self.b);}
+                    _ => {panic!("cycles left incorrect")}
+                }
+            }
+            0x71 => { // LD (HL),C
+                match self.cyclesLeft {
+                    2 => {}
+                    1 => {self.writeByte(self.getHL(), self.c);}
+                    _ => {panic!("cycles left incorrect")}
+                }
+            }
+            0x72 => { // LD (HL),D
+                match self.cyclesLeft {
+                    2 => {}
+                    1 => {self.writeByte(self.getHL(), self.d);}
+                    _ => {panic!("cycles left incorrect")}
+                }
+            }
+            0x73 => { // LD (HL),E
+                match self.cyclesLeft {
+                    2 => {}
+                    1 => {self.writeByte(self.getHL(), self.e);}
+                    _ => {panic!("cycles left incorrect")}
+                }
+            }
+            0x74 => { // LD (HL),H
+                match self.cyclesLeft {
+                    2 => {}
+                    1 => {self.writeByte(self.getHL(), self.h);}
+                    _ => {panic!("cycles left incorrect")}
+                }
+            }
+            0x75 => { // LD (HL),L
+                match self.cyclesLeft {
+                    2 => {}
+                    1 => {self.writeByte(self.getHL(), self.l);}
+                    _ => {panic!("cycles left incorrect")}
+                }
+            }
+            //0x76 => { // HALT}
+            0x77 => {
+                match self.cyclesLeft {
+                    2 => {}
+                    1 => {self.writeByte(self.getHL(), self.a);}
+                    _ => {panic!("cycles left incorrect")}
+                }
+            }
+            0x78 => { // LD A,B
                 self.a = self.b;
             }
-            0x79 => {
+            0x79 => { // LD A,C
                 self.a = self.c;
             }
-            0x7A => {
+            0x7A => { // LD A,D
                 self.a = self.d;
             }
-            0x7B => {
+            0x7B => { // LD A,E
                 self.a = self.e;
             }
-            0x7C => {
+            0x7C => { // LD A,H
                 self.a = self.h;
             }
-            0x7D => {
+            0x7D => { // LD A,L
                 self.a = self.l;
             }
-            /*
-            0x7E => {
-                self.a = 
+            0x7E => { // LD A,(HL)
+                match self.cyclesLeft {
+                    2 => {}
+                    1 => {self.a = self.readByte(self.getHL());}
+                    _ => {panic!("cycles left incorrect")}
+                }
             }
-            */
-            0x7F => {
+            0x7F => { // LD A,A
                 self.a = self.a;
             }
             _ => panic!("Unknown opcode or not implemented"),
