@@ -12,7 +12,8 @@ struct Z80{
     sp: u16,
     pc: u16,
 
-    bus: Bus
+    bus: Bus,
+    cyclesLeft: u8,
 }
 
 enum Flags {
@@ -43,6 +44,7 @@ impl Z80{
             pc: 0,
 
             bus: Bus::new(),
+            cyclesLeft: 0,
         }
     }
 
@@ -117,16 +119,22 @@ const nameVector: Vec<String> = vec![
 
 impl Z80 {
     fn readByte(&self, addr: u16) -> u8 {
-        todo!("implement read byte");
+        self.bus.cpuRead(addr)
     }
     fn readBytes(&self, addr: u16) -> u16 {
-        todo!("implement read bytes");
+        u16::from_le_bytes([
+            self.bus.cpuRead(addr),
+            self.bus.cpuRead(addr + 1)
+        ])
     }
     fn writeByte(&mut self, addr: u16, data: u8) {
-        todo!("implement write byte");
+        self.bus.cpuWrite(addr, data);
     }
     fn writeBytes(&mut self, addr: u16, data: u16) {
-        todo!("implement write bytes");
+        let dHI = (data >> 8) as u8;
+        let dLO = data as u8;
+        self.bus.cpuWrite(addr, dLO);
+        self.bus.cpuWrite(addr, dHI);
     }
     fn executeInstrction(&mut self, opcode: u8) {
         match opcode {
