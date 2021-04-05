@@ -14,7 +14,10 @@ struct Z80{
 
     bus: Bus,
     cyclesLeft: u8,
-    fetched: u8
+    fetched: u8,
+    currentOpcode: u8,
+
+    prefixedInstruction: bool
 }
 
 enum Flags {
@@ -47,6 +50,9 @@ impl Z80{
             bus: Bus::new(),
             cyclesLeft: 0,
             fetched: 0,
+            currentOpcode: 0,
+
+            prefixedInstruction: false
         }
     }
 
@@ -138,7 +144,8 @@ impl Z80 {
         self.bus.cpuWrite(addr, dLO);
         self.bus.cpuWrite(addr, dHI);
     }
-    fn executeOneCycle(&mut self, opcode: u8) {
+
+    fn unprefixedOpcodes(&mut self, opcode: u8) {
         match opcode {
             0x00 => {
 
@@ -553,9 +560,53 @@ impl Z80 {
             0x7F => { // LD A,A
                 self.a = self.a;
             }
+
+            0xCB => {self.prefixedInstruction = true}
             _ => panic!("Unknown opcode or not implemented"),
         }
+    }
+
+    fn prefixedOpcodes(&mut self, opcode: u8) {
+        match opcode {
+            _ => panic!("Prefixed opcodes not implemented")
+        }
+    }
+
+    fn executeOneCycle(&mut self, opcode: u8) {
+        if self.prefixedInstruction {
+            self.prefixedOpcodes(opcode);
+        } else {
+            self.unprefixedOpcodes(opcode);
+        }
+        
         self.cyclesLeft -= 1;
     }
+
+    fn getInstructionInfo(&self, opcode: u8) -> (&str, u8, u8) {
+        if self.prefixedInstruction {
+            prefixedInstructionInfoTable[opcode as usize]
+        } else {
+            unprefixedInstructionInfoTable[opcode as usize]
+        }
+    }
+
+    pub fn clock(&mut self) {
+        if self.cyclesLeft == 0 {
+            let (_, length, cycles) = self.getInstructionInfo(self.currentOpcode);
+            self.pc = self.pc.wrapping_add(length as u16);
+            self.currentOpcode = self.readByte(self.pc);
+            self.cyclesLeft = cycles;
+        } else {
+            self.executeOneCycle(self.currentOpcode);
+        }
+    }
 }
+
+const unprefixedInstructionInfoTable: Vec<(&str, u8, u8)> = vec![
+    ("NOP", 1, 1), ("LD BC", 3, 3), ("LD (BC), A", 1, 2), ("INC BC", 1, 2)
+];
+
+const prefixedInstructionInfoTable: Vec<(&str, u8, u8)> = vec![
+    ("NOP", 1, 1), ("LD BC", 3, 3), ("LD (BC), A", 1, 2), ("INC BC", 1, 2)
+];
 
