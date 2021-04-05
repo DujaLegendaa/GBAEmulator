@@ -136,8 +136,12 @@ impl Z80 {
         self.bus.cpuWrite(addr, dLO);
         self.bus.cpuWrite(addr, dHI);
     }
-    fn executeInstrction(&mut self, opcode: u8) {
+    fn executeOneCycle(&mut self, opcode: u8) {
         match opcode {
+            0x00 => {
+
+            }
+
             0x40 => {
                 self.b = self.b;
             }
@@ -189,6 +193,7 @@ impl Z80 {
 
             _ => panic!("Unknown opcode or not implemented"),
         }
+        self.cyclesLeft -= 1;
     }
 }
 
