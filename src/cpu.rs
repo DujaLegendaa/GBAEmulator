@@ -1,16 +1,16 @@
 use super::bit;
 use super::bus::{Bus};
-struct Z80{
-    a: u8,
-    f: u8,
-    b: u8,
-    c: u8,
-    d: u8,
-    e: u8,
-    h: u8,
-    l: u8,
-    sp: u16,
-    pc: u16,
+pub struct Z80{
+    pub a: u8,
+    pub f: u8,
+    pub b: u8,
+    pub c: u8,
+    pub d: u8,
+    pub e: u8,
+    pub h: u8,
+    pub l: u8,
+    pub sp: u16,
+    pub pc: u16,
 
     bus: Bus,
     cyclesLeft: u8,
@@ -20,7 +20,7 @@ struct Z80{
     prefixedInstruction: bool
 }
 
-enum Flags {
+pub enum Flags {
     Zero = 7,
     Sub = 6, // only with DAA
     HCarry = 5, // only with DAA
@@ -34,7 +34,7 @@ enum Flags {
 }
 
 impl Z80{
-    fn new() -> Self{
+    pub fn new() -> Self{
         Self{
             a: 0,
             f: 0,
@@ -102,7 +102,7 @@ impl Z80{
         self.l = data as u8;
     }
 
-    fn getFlag(&self, fl: Flags) -> bool {
+    pub fn getFlag(&self, fl: Flags) -> bool {
         bit::get(self.f, fl as usize)
     }
 
@@ -121,12 +121,8 @@ impl Z80{
     
 }
 
-const nameVector: Vec<String> = vec![
-
-];
-
 impl Z80 {
-    fn readByte(&self, addr: u16) -> u8 {
+    pub fn readByte(&self, addr: u16) -> u8 {
         self.bus.cpuRead(addr)
     }
     fn readBytes(&self, addr: u16) -> u16 {
@@ -135,7 +131,7 @@ impl Z80 {
             self.bus.cpuRead(addr + 1)
         ])
     }
-    fn writeByte(&mut self, addr: u16, data: u8) {
+    pub fn writeByte(&mut self, addr: u16, data: u8) {
         self.bus.cpuWrite(addr, data);
     }
     fn writeBytes(&mut self, addr: u16, data: u16) {
@@ -183,7 +179,7 @@ impl Z80 {
                 self.b = self.b.wrapping_sub(1);
                 self.setZeroFlag(self.b);
                 self.setFlag(true, Flags::Sub);
-            }
+            },
 
             0x11 => { // LD DE,u16
                 match self.cyclesLeft {
@@ -370,117 +366,117 @@ impl Z80 {
 
             0x50 => { // LD D,B
                 self.d = self.b;
-            }
+            },
             0x51 => { // LD D,C
                 self.d = self.c;
-            }
+            },
             0x52 => { // LD D,D
                 self.d = self.d;
-            }
+            },
             0x53 => { // LD D,E
                 self.d = self.e;
-            }
+            },
             0x54 => { // LD D,H
                 self.d = self.h;
-            }
+            },
             0x55 => { // LD D,L
                 self.d = self.l;
-            }
+            },
             0x56 => { // LD D,(HL)
                 match self.cyclesLeft {
                     2 => {}
                     1 => {self.d = self.readByte(self.getHL());}
                     _ => {panic!("cycles left incorrect")}
                 }
-            }
+            },
             0x57 => { // LD D,A
                 self.d = self.a;
-            }
+            },
             0x58 => { // LD E,B
                 self.e = self.b;
-            }
+            },
             0x59 => { // LD E,C
                 self.e = self.c;
-            }
+            },
             0x5A => { // LD E,D
                 self.e = self.d;
-            }
+            },
             0x5B => { // LD E,E
                 self.e = self.e;
-            }
+            },
             0x5C => { // LD E,H
                 self.e = self.h;
-            }
+            },
             0x5D => { // LD E,L
                 self.e = self.l;
-            }
+            },
             0x5E => { // LD E,(HL)
                 match self.cyclesLeft {
                     2 => {}
                     1 => {self.e = self.readByte(self.getHL());}
                     _ => {panic!("cycles left incorrect")}
                 }
-            }
+            },
             0x5F => { // LD E,A
                 self.e = self.a;
-            }
+            },
 
             0x60 => { // LD H,B
                 self.h = self.b;
-            }
+            },
             0x61 => { // LD H,C
                 self.h = self.c;
-            }
+            },
             0x62 => { // LD H,D
                 self.h = self.d;
-            }
+            },
             0x63 => { // LD H,E
                 self.h = self.e;
-            }
+            },
             0x64 => { // LD H,H
                 self.h = self.h;
-            }
+            },
             0x65 => { // LD H,L
                 self.h = self.l;
-            }
+            },
             0x66 => { // LD H,(HL)
                 match self.cyclesLeft {
                     2 => {}
                     1 => {self.h = self.readByte(self.getHL());}
                     _ => {panic!("cycles left incorrect")}
                 }
-            }
+            },
             0x67 => { // LD H,A
                 self.h = self.a;
-            }
+            },
             0x68 => { // LD L,B
                 self.l = self.b;
-            }
+            },
             0x69 => { // LD L,C
                 self.l = self.c;
-            }
+            },
             0x6A => { // LD L,D
                 self.l = self.d;
-            }
+            },
             0x6B => { // LD L,E
                 self.l = self.e;
-            }
+            },
             0x6C => { // LD L,H
                 self.l = self.h;
-            }
+            },
             0x6D => { // LD L,L
                 self.l = self.l;
-            }
+            },
             0x6E => { // LD L,(HL)
                 match self.cyclesLeft {
                     2 => {}
                     1 => {self.l = self.readByte(self.getHL());}
                     _ => {panic!("cycles left incorrect")}
                 }
-            }
+            },
             0x6F => { // LD L,A
                 self.l = self.a;
-            }
+            },
 
             0x70 => { // LD (HL),B
                 match self.cyclesLeft {
@@ -488,42 +484,42 @@ impl Z80 {
                     1 => {self.writeByte(self.getHL(), self.b);}
                     _ => {panic!("cycles left incorrect")}
                 }
-            }
+            },
             0x71 => { // LD (HL),C
                 match self.cyclesLeft {
                     2 => {}
                     1 => {self.writeByte(self.getHL(), self.c);}
                     _ => {panic!("cycles left incorrect")}
                 }
-            }
+            },
             0x72 => { // LD (HL),D
                 match self.cyclesLeft {
                     2 => {}
                     1 => {self.writeByte(self.getHL(), self.d);}
                     _ => {panic!("cycles left incorrect")}
                 }
-            }
+            },
             0x73 => { // LD (HL),E
                 match self.cyclesLeft {
                     2 => {}
                     1 => {self.writeByte(self.getHL(), self.e);}
                     _ => {panic!("cycles left incorrect")}
                 }
-            }
+            },
             0x74 => { // LD (HL),H
                 match self.cyclesLeft {
                     2 => {}
                     1 => {self.writeByte(self.getHL(), self.h);}
                     _ => {panic!("cycles left incorrect")}
                 }
-            }
+            },
             0x75 => { // LD (HL),L
                 match self.cyclesLeft {
                     2 => {}
                     1 => {self.writeByte(self.getHL(), self.l);}
                     _ => {panic!("cycles left incorrect")}
                 }
-            }
+            },
             //0x76 => { // HALT}
             0x77 => {
                 match self.cyclesLeft {
@@ -531,79 +527,78 @@ impl Z80 {
                     1 => {self.writeByte(self.getHL(), self.a);}
                     _ => {panic!("cycles left incorrect")}
                 }
-            }
+            },
             0x78 => { // LD A,B
                 self.a = self.b;
-            }
+            },
             0x79 => { // LD A,C
                 self.a = self.c;
-            }
+            },
             0x7A => { // LD A,D
                 self.a = self.d;
-            }
+            },
             0x7B => { // LD A,E
                 self.a = self.e;
-            }
+            },
             0x7C => { // LD A,H
                 self.a = self.h;
-            }
+            },
             0x7D => { // LD A,L
                 self.a = self.l;
-            }
+            },
             0x7E => { // LD A,(HL)
                 match self.cyclesLeft {
                     2 => {}
                     1 => {self.a = self.readByte(self.getHL());}
                     _ => {panic!("cycles left incorrect")}
                 }
-            }
+            },
             0x7F => { // LD A,A
                 self.a = self.a;
-            }
+            },
 
-            0xCB => {self.prefixedInstruction = true}
             0xA0 => { // AND A,B
                 self.a &= self.b;
                 self.setZeroFlag(self.a);
                 self.setFlag(false,Flags::Sub);
                 self.setFlag(true,Flags::HCarry);
                 self.setFlag(false,Flags::Carry);
-            }
+            },
             0xA1 => { // AND A,C
                 self.a &= self.c;
                 self.setZeroFlag(self.a);
                 self.setFlag(false,Flags::Sub);
                 self.setFlag(true,Flags::HCarry);
                 self.setFlag(false,Flags::Carry);
-            }
+            },
             0xA2 => { // AND A,D
                 self.a &= self.d;
                 self.setZeroFlag(self.a);
                 self.setFlag(false,Flags::Sub);
                 self.setFlag(true,Flags::HCarry);
                 self.setFlag(false,Flags::Carry);
-            }
+            },
             0xA3 => { // AND A,E
                 self.a &= self.e;
                 self.setZeroFlag(self.a);
                 self.setFlag(false,Flags::Sub);
                 self.setFlag(true,Flags::HCarry);
                 self.setFlag(false,Flags::Carry);
-            }
+            },
             0xA4 => { // AND A,H
                 self.a &= self.h;
                 self.setZeroFlag(self.a);
                 self.setFlag(false,Flags::Sub);
                 self.setFlag(true,Flags::HCarry);
                 self.setFlag(false,Flags::Carry);
-            }
+            },
             0xA5 => { // AND A,L
                 self.a &= self.l;
                 self.setZeroFlag(self.a);
                 self.setFlag(false,Flags::Sub);
                 self.setFlag(true,Flags::HCarry);
                 self.setFlag(false,Flags::Carry);
-            }
+            },
             0xA6 => { // AND A,(HL)
                 match self.cyclesLeft {
                     2 => {}
@@ -614,56 +609,56 @@ impl Z80 {
                         self.setFlag(false,Flags::Carry);}
                     _ => {panic!("cycles left incorrect")}
                 }
-            }
+            },
             0xA7 => { // AND A,A
                 self.a &= self.a;
                 self.setZeroFlag(self.a);
                 self.setFlag(false,Flags::Sub);
                 self.setFlag(true,Flags::HCarry);
                 self.setFlag(false,Flags::Carry);
-            }
+            },
             0xA8 => { // XOR A,B
                 self.a ^= self.b;
                 self.setZeroFlag(self.a);
                 self.setFlag(false,Flags::Sub);
                 self.setFlag(false,Flags::HCarry);
                 self.setFlag(false,Flags::Carry);
-            }
+            },
             0xA9 => { // XOR A,C
                 self.a ^= self.c;
                 self.setZeroFlag(self.a);
                 self.setFlag(false,Flags::Sub);
                 self.setFlag(false,Flags::HCarry);
                 self.setFlag(false,Flags::Carry);
-            }
+            },
             0xAA => { // XOR A,D
                 self.a ^= self.d;
                 self.setZeroFlag(self.a);
                 self.setFlag(false,Flags::Sub);
                 self.setFlag(false,Flags::HCarry);
                 self.setFlag(false,Flags::Carry);
-            }
+            },
             0xAB => { // XOR A,E
                 self.a ^= self.e;
                 self.setZeroFlag(self.a);
                 self.setFlag(false,Flags::Sub);
                 self.setFlag(false,Flags::HCarry);
                 self.setFlag(false,Flags::Carry);
-            }
+            },
             0xAC => { // XOR A,H
                 self.a ^= self.h;
                 self.setZeroFlag(self.a);
                 self.setFlag(false,Flags::Sub);
                 self.setFlag(false,Flags::HCarry);
                 self.setFlag(false,Flags::Carry);
-            }
+            },
             0xAD => { // XOR A,L
                 self.a ^= self.l;
                 self.setZeroFlag(self.a);
                 self.setFlag(false,Flags::Sub);
                 self.setFlag(false,Flags::HCarry);
                 self.setFlag(false,Flags::Carry);
-            }
+            },
             0xAE => { // XOR A,(HL)
                 match self.cyclesLeft {
                     2 => {}
@@ -674,14 +669,14 @@ impl Z80 {
                         self.setFlag(false,Flags::Carry);}
                     _ => {panic!("cycles left incorrect")}
                 }
-            }
+            },
             0xAF => { // XOR A,A
                 self.a ^= self.a;
                 self.setZeroFlag(self.a);
                 self.setFlag(false,Flags::Sub);
                 self.setFlag(false,Flags::HCarry);
                 self.setFlag(false,Flags::Carry);
-            }
+            },
 
             0xB0 => { // OR A,B
                 self.a |= self.b;
@@ -689,42 +684,42 @@ impl Z80 {
                 self.setFlag(false,Flags::Sub);
                 self.setFlag(false,Flags::HCarry);
                 self.setFlag(false,Flags::Carry);
-            }
+            },
             0xB1 => { // OR A,C
                 self.a |= self.c;
                 self.setZeroFlag(self.a);
                 self.setFlag(false,Flags::Sub);
                 self.setFlag(false,Flags::HCarry);
                 self.setFlag(false,Flags::Carry);
-            }
+            },
             0xB2 => { // OR A,D
                 self.a |= self.d;
                 self.setZeroFlag(self.a);
                 self.setFlag(false,Flags::Sub);
                 self.setFlag(false,Flags::HCarry);
                 self.setFlag(false,Flags::Carry);
-            }
+            },
             0xB3 => { // OR A,E
                 self.a |= self.e;
                 self.setZeroFlag(self.a);
                 self.setFlag(false,Flags::Sub);
                 self.setFlag(false,Flags::HCarry);
                 self.setFlag(false,Flags::Carry);
-            }
+            },
             0xB4 => { // OR A,H
                 self.a |= self.h;
                 self.setZeroFlag(self.a);
                 self.setFlag(false,Flags::Sub);
                 self.setFlag(false,Flags::HCarry);
                 self.setFlag(false,Flags::Carry);
-            }
+            },
             0xB5 => { // OR A,L
                 self.a |= self.l;
                 self.setZeroFlag(self.a);
                 self.setFlag(false,Flags::Sub);
                 self.setFlag(false,Flags::HCarry);
                 self.setFlag(false,Flags::Carry);
-            }
+            },
             0xB6 => { // OR A,(HL)
                 match self.cyclesLeft {
                     2 => {}
@@ -735,14 +730,16 @@ impl Z80 {
                         self.setFlag(false,Flags::Carry);}
                     _ => {panic!("cycles left incorrect")}
                 }
-            }
+            },
             0xB7 => { // OR A,A
                 self.a |= self.a;
                 self.setZeroFlag(self.a);
                 self.setFlag(false,Flags::Sub);
                 self.setFlag(false,Flags::HCarry);
                 self.setFlag(false,Flags::Carry);
-            }
+            },
+
+            0xCB => {self.prefixedInstruction = true},
             _ => panic!("Unknown opcode or not implemented"),
         }
     }
@@ -765,29 +762,30 @@ impl Z80 {
 
     fn getInstructionInfo(&self, opcode: u8) -> (&str, u8, u8) {
         if self.prefixedInstruction {
-            prefixedInstructionInfoTable[opcode as usize]
+            PREFIXED_INSTRUCTION_TABLE[opcode as usize]
         } else {
-            unprefixedInstructionInfoTable[opcode as usize]
+            UNPREFIXED_INSTRUCTION_TABLE[opcode as usize]
         }
     }
 
     pub fn clock(&mut self) {
         if self.cyclesLeft == 0 {
-            let (_, length, cycles) = self.getInstructionInfo(self.currentOpcode);
+            let (_, length, _) = self.getInstructionInfo(self.currentOpcode);
             self.pc = self.pc.wrapping_add(length as u16);
+            
             self.currentOpcode = self.readByte(self.pc);
+            let (_, _, cycles) = self.getInstructionInfo(self.currentOpcode);
             self.cyclesLeft = cycles;
-        } else {
-            self.executeOneCycle(self.currentOpcode);
         }
+        self.executeOneCycle(self.currentOpcode);
     }
 }
 
-const unprefixedInstructionInfoTable: Vec<(&str, u8, u8)> = vec![
-    ("NOP", 1, 1), ("LD BC", 3, 3), ("LD (BC), A", 1, 2), ("INC BC", 1, 2)
+const UNPREFIXED_INSTRUCTION_TABLE: [(&str, u8, u8); 4]= [
+    ("NOP", 1, 1), ("LD BC", 3, 3), ("LD (BC), A", 1, 2), ("INC BC", 1, 2), 
 ];
 
-const prefixedInstructionInfoTable: Vec<(&str, u8, u8)> = vec![
+const PREFIXED_INSTRUCTION_TABLE: [(&str, u8, u8); 4] = [
     ("NOP", 1, 1), ("LD BC", 3, 3), ("LD (BC), A", 1, 2), ("INC BC", 1, 2)
 ];
 
