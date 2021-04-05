@@ -161,7 +161,11 @@ impl Z80 {
                 self.b = self.l;
             }
             0x46 => {
-                self.b = self.readByte(self.getHL());
+                match self.cyclesLeft {
+                    2 => {}
+                    1 => {self.b = self.readByte(self.getHL());}
+                    _ => {panic!("cycles left incorrect")}
+                }
             }
             0x47 => {
                 self.b = self.a;
