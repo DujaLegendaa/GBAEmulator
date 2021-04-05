@@ -14,6 +14,7 @@ struct Z80{
 
     bus: Bus,
     cyclesLeft: u8,
+    fetched: u8
 }
 
 enum Flags {
@@ -45,6 +46,7 @@ impl Z80{
 
             bus: Bus::new(),
             cyclesLeft: 0,
+            fetched: 0,
         }
     }
 
@@ -156,6 +158,25 @@ impl Z80 {
                     _ => {panic!("cycles left incorrect")}
                 }
             },
+            0x03 => { // INC BC
+                match self.cyclesLeft {
+                    2 => {},
+                    1 => {self.setBC(self.getBC().wrapping_add(1))},
+                    _ => {panic!("cycles left incorrect")},
+                }
+            },
+            0x04 => { // INC B
+                self.setFlag((self.b & 0xf) + 1 > 0xf, Flags::HCarry);
+                self.b = self.b.wrapping_add(1);
+                self.setZeroFlag(self.b);
+                self.setFlag(false, Flags::Sub);
+            },
+            0x05 => { // DEC B
+                self.setFlag((self.b & 0xf) as i8 - 1 < 0, Flags::HCarry);
+                self.b = self.b.wrapping_sub(1);
+                self.setZeroFlag(self.b);
+                self.setFlag(true, Flags::Sub);
+            }
 
             0x11 => { // LD DE,u16
                 match self.cyclesLeft {
@@ -171,6 +192,25 @@ impl Z80 {
                     1 => {self.writeByte(self.getDE(), self.a)}
                     _ => {panic!("cycles left incorrect")}
                 }
+            },
+            0x13 => { // INC DE
+                match self.cyclesLeft {
+                    2 => {},
+                    1 => {self.setDE(self.getDE().wrapping_add(1))},
+                    _ => {panic!("cycles left incorrect")},
+                }
+            },
+            0x14 => { // INC D
+                self.setFlag((self.d & 0xf) + 1 > 0xf, Flags::HCarry);
+                self.d = self.b.wrapping_add(1);
+                self.setZeroFlag(self.d);
+                self.setFlag(false, Flags::Sub);
+            },
+            0x15 => { // DEC D
+                self.setFlag((self.d & 0xf) as i8 - 1 < 0, Flags::HCarry);
+                self.d = self.d.wrapping_sub(1);
+                self.setZeroFlag(self.d);
+                self.setFlag(true, Flags::Sub);
             },
 
             0x21 => { // LD HL,u16
@@ -188,6 +228,25 @@ impl Z80 {
                     _ => {panic!("cycles left incorrect")}
                 }
             },
+            0x23 => { // INC HL
+                match self.cyclesLeft {
+                    2 => {},
+                    1 => {self.setHL(self.getHL().wrapping_add(1))},
+                    _ => {panic!("cycles left incorrect")},
+                }
+            },
+            0x24 => { // INC H
+                self.setFlag((self.h & 0xf) + 1 > 0xf, Flags::HCarry);
+                self.h = self.b.wrapping_add(1);
+                self.setZeroFlag(self.h);
+                self.setFlag(false, Flags::Sub);
+            },
+            0x25 => { // DEC H
+                self.setFlag((self.h & 0xf) as i8 - 1 < 0, Flags::HCarry);
+                self.h = self.h.wrapping_sub(1);
+                self.setZeroFlag(self.h);
+                self.setFlag(true, Flags::Sub);
+            },
 
             0x31 => { // LD SP,u16
                 match self.cyclesLeft {
@@ -202,6 +261,45 @@ impl Z80 {
                     2 => {}
                     1 => {self.writeByte(self.getHL(), self.a); self.setHL(self.getHL().wrapping_sub(1))}
                     _ => {panic!("cycles left incorrect")}
+                }
+            },
+            0x33 => { // INC SP
+                match self.cyclesLeft {
+                    2 => {},
+                    1 => {self.sp = self.sp.wrapping_add(1)},
+                    _ => {panic!("cycles left incorrect")},
+                }
+            },
+            0x34 => { // INC (HL)
+                match self.cyclesLeft {
+                    3 => {},
+                    2 => {self.fetched = self.readByte(self.getHL())},
+                    1 => {
+                        self.setFlag((self.fetched & 0xf) + 1 > 0xf, Flags::HCarry);
+
+                        self.fetched = self.fetched.wrapping_add(1);
+                        self.writeByte(self.getHL(), self.fetched);
+
+                        self.setZeroFlag(self.fetched);
+                        self.setFlag(false, Flags::Sub);
+                    },
+                    _ => {panic!("cycles left incorrect")},
+                }
+            },
+            0x35 => { // DEC (HL)
+                match self.cyclesLeft {
+                    3 => {},
+                    2 => {self.fetched = self.readByte(self.getHL())},
+                    1 => {
+                        self.setFlag((self.fetched & 0xf) as i8 - 1 < 0x0, Flags::HCarry);
+
+                        self.fetched = self.fetched.wrapping_sub(1);
+                        self.writeByte(self.getHL(), self.fetched);
+
+                        self.setZeroFlag(self.fetched);
+                        self.setFlag(true, Flags::Sub);
+                    },
+                    _ => {panic!("cycles left incorrect")},
                 }
             },
 
