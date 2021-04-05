@@ -138,6 +138,55 @@ impl Z80 {
     }
     fn executeInstrction(&mut self, opcode: u8) {
         match opcode {
+            0x40 => {
+                self.b = self.b;
+            }
+            0x41 => {
+                self.b = self.c;
+            }
+            0x42 => {
+                self.b = self.d;
+            }
+            0x43 => {
+                self.b = self.e;
+            }
+            0x44 => {
+                self.b = self.h;
+            }
+            0x45 => {
+                self.b = self.l;
+            }
+            0x46 => {
+                self.b = self.readByte(self.getHL());
+            }
+            0x47 => {
+                self.b = self.a;
+            }
+            0x48 => {
+                self.c = self.b;
+            }
+            0x49 => {
+                self.c = self.c;
+            }
+            0x4A => {
+                self.c = self.d;
+            }
+            0x4B => {
+                self.c = self.e;
+            }
+            0x4C => {
+                self.c = self.h;
+            }
+            0x4D => {
+                self.c = self.l;
+            }
+            0x4E => {
+                self.c = self.readByte(self.getHL());
+            }
+            0x4F => {
+                self.c = self.a;
+            }
+
             _ => panic!("Unknown opcode or not implemented"),
         }
     }
