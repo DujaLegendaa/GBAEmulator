@@ -300,7 +300,32 @@ impl Z80 {
                 self.l = self.a;
             }
 
-            
+            0x78 => {
+                self.a = self.b;
+            }
+            0x79 => {
+                self.a = self.c;
+            }
+            0x7A => {
+                self.a = self.d;
+            }
+            0x7B => {
+                self.a = self.e;
+            }
+            0x7C => {
+                self.a = self.h;
+            }
+            0x7D => {
+                self.a = self.l;
+            }
+            /*
+            0x7E => {
+                self.a = 
+            }
+            */
+            0x7F => {
+                self.a = self.a;
+            }
             _ => panic!("Unknown opcode or not implemented"),
         }
         self.cyclesLeft -= 1;
