@@ -106,3 +106,27 @@ impl Z80{
     
 }
 
+const nameVector: Vec<String> = vec![
+
+];
+
+impl Z80 {
+    fn readByte() -> u8 {
+        todo!("implement read byte");
+    }
+    fn readBytes() -> u16 {
+        todo!("implement read bytes");
+    }
+    fn writeByte() {
+        todo!("implement write byte");
+    }
+    fn writeBytes() {
+        todo!("implement write bytes");
+    }
+    fn executeInstrction(&mut self, opcode: u8) {
+        match opcode {
+            _ => panic!("Unknown opcode or not implemented"),
+        }
+    }
+}
+
