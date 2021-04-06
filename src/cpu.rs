@@ -141,6 +141,71 @@ impl Z80 {
         self.bus.cpuWrite(addr, dHI);
     }
 
+    fn ADD(&mut self, op1: u8, op2: u8) -> u8{
+        let (result, carry) = op1.overflowing_add(op2);
+        self.setZeroFlag(result);
+        self.setFlag(false, Flags::Sub);
+        self.setFlag((op1 & 0xf) + (op2 & 0xf) > 0xf, Flags::HCarry);
+        self.setFlag(carry, Flags::Carry);
+        result
+    }
+
+    fn ADC(&mut self, op1: u8, op2: u8) -> u8 {
+        let (result1, carry1) = op1.overflowing_add(op2);
+        let (result2, carry2) = result1.overflowing_add(self.getFlag(Flags::Carry) as u8);
+        self.setZeroFlag(result2);
+        self.setFlag(false, Flags::Sub);
+        self.setFlag((op1 & 0xf) + (op2 & 0xf) + (self.getFlag(Flags::Carry) as u8) > 0xf, Flags::HCarry);
+        self.setFlag(carry1 | carry2, Flags::Carry);
+        result2
+    }
+
+    fn SUB(&mut self, op1: u8, op2: u8) -> u8 {
+        let (result, carry) = op1.overflowing_sub(op2);
+        self.setZeroFlag(result);
+        self.setFlag(true, Flags::Sub);
+        self.setFlag(((op1 & 0xf) as i8 - (op2 & 0xf) as i8) < 0x0, Flags::HCarry);
+        self.setFlag(carry, Flags::Carry);
+        result
+    }
+
+    fn SBC(&mut self, op1: u8, op2: u8) -> u8 {
+        let (result1, carry1) = op1.overflowing_sub(op2);
+        let (result2, carry2) = result1.overflowing_sub(self.getFlag(Flags::Carry) as u8);
+        self.setZeroFlag(result2);
+        self.setFlag(true, Flags::Sub);
+        self.setFlag((op1 & 0xf) as i8 - (op2 & 0xf) as i8 - (self.getFlag(Flags::Carry) as i8) > 0xf, Flags::HCarry);
+        self.setFlag(carry1 | carry2, Flags::Carry);
+        result2
+    }
+
+    fn AND(&mut self, op1: u8, op2: u8) -> u8 {
+        let r = op1 & op2;
+        self.setZeroFlag(r);
+        self.setFlag(false,Flags::Sub);
+        self.setFlag(true,Flags::HCarry);
+        self.setFlag(false,Flags::Carry);
+        r
+    }
+
+    fn XOR(&mut self, op1: u8, op2: u8) -> u8 {
+        let r = op1 ^ op2;
+        self.setZeroFlag(r);
+        self.setFlag(false,Flags::Sub);
+        self.setFlag(false,Flags::HCarry);
+        self.setFlag(false,Flags::Carry);
+        r
+    }
+
+    fn OR(&mut self, op1: u8, op2: u8) -> u8 {
+        let r = op1 | op2;
+        self.setZeroFlag(r);
+        self.setFlag(false,Flags::Sub);
+        self.setFlag(false,Flags::HCarry);
+        self.setFlag(false,Flags::Carry);
+        r
+    }
+
     fn unprefixedOpcodes(&mut self, opcode: u8){
         match opcode {
             0x00 => { // NOP
@@ -856,186 +921,213 @@ impl Z80 {
                 self.a = self.a;
             },
 
+            0x80 => { // ADD A,B
+                self.a = self.ADD(self.a, self.b);
+            },
+            0x81 => { // ADD A,C
+                self.a = self.ADD(self.a, self.c);
+            },
+            0x82 => { // ADD A,D
+                self.a = self.ADD(self.a, self.d);
+            },
+            0x83 => { // ADD A,E
+                self.a = self.ADD(self.a, self.e);
+            },
+            0x84 => { // ADD A,H
+                self.a = self.ADD(self.a, self.h);
+            },
+            0x85 => { // ADD A,L
+                self.a = self.ADD(self.a, self.l);
+            },
+            0x86 => { // ADD A,(HL) *mozda popraviti*
+                match self.cyclesLeft {
+                    2 => {self.fetched = self.readByte(self.getHL())},
+                    1 => {
+                        self.a = self.ADD(self.a, self.fetched);
+                    },
+                    _ => {panic!("cycles left incorrect")}
+                }
+            },
+            0x87 => { // ADD A,A
+                self.a = self.ADD(self.a, self.a);
+            },
+            0x88 => { // ADC A,B
+                self.a = self.ADC(self.a, self.b);
+            },
+            0x89 => { // ADC A,C
+                self.a = self.ADC(self.a, self.c);
+            },
+            0x8A => { // ADC A,D
+                self.a = self.ADC(self.a, self.d);
+            },
+            0x8B => { // ADC A,E
+                self.a = self.ADC(self.a, self.e);
+            },
+            0x8C => { // ADC A,H
+                self.a = self.ADC(self.a, self.h);
+            },
+            0x8D => { // ADC A,L
+                self.a = self.ADC(self.a, self.l);
+            },
+            0x8E => { // ADC A,(HL) *mozda popraviti*
+                match self.cyclesLeft {
+                    2 => {self.fetched = self.readByte(self.getHL())},
+                    1 => {
+                        self.a = self.ADC(self.a, self.fetched);
+                    },
+                    _ => {panic!("cycles left incorrect")}
+                }
+            },
+            0x8F => { // ADC A,A
+                self.a = self.ADC(self.a, self.a);
+            },
+            
+            0x90 => { // SUB A,B
+                self.a = self.SUB(self.a, self.b);
+            },
+            0x91 => { // SUB A,C
+                self.a = self.SUB(self.a, self.c);
+            },
+            0x92 => { // SUB A,D
+                self.a = self.SUB(self.a, self.d);
+            },
+            0x93 => { // SUB A,E
+                self.a = self.SUB(self.a, self.e);
+            },
+            0x94 => { // SUB A,H
+                self.a = self.SUB(self.a, self.h);
+            },
+            0x95 => { // SUB A,L
+                self.a = self.SUB(self.a, self.l);
+            },
+            0x96 => { // SUB A,(HL) *mozda popraviti*
+                match self.cyclesLeft {
+                    2 => {self.fetched = self.readByte(self.getHL())},
+                    1 => {
+                        self.a = self.SUB(self.a, self.fetched);
+                    },
+                    _ => {panic!("cycles left incorrect")}
+                }
+            },
+            0x97 => { // SUB A,A
+                self.a = self.SUB(self.a, self.a);
+            },
+            0x98 => { // SBC A,B
+                self.a = self.SBC(self.a, self.b);
+            },
+            0x99 => { // SBC A,C
+                self.a = self.SBC(self.a, self.c);
+            },
+            0x9A => { // SBC A,D
+                self.a = self.SBC(self.a, self.d);
+            },
+            0x9B => { // SBC A,E
+                self.a = self.SBC(self.a, self.e);
+            },
+            0x9C => { // SBC A,H
+                self.a = self.SBC(self.a, self.h);
+            },
+            0x9D => { // SBC A,L
+                self.a = self.SBC(self.a, self.l);
+            },
+            0x9E => { // SBC A,(HL) *mozda popraviti*
+                match self.cyclesLeft {
+                    2 => {self.fetched = self.readByte(self.getHL())},
+                    1 => {
+                        self.a = self.SBC(self.a, self.fetched);
+                    },
+                    _ => {panic!("cycles left incorrect")}
+                }
+            },
+            0x9F => { // SBC A,A
+                self.a = self.SBC(self.a, self.a);
+            },
+        
+
             0xA0 => { // AND A,B
-                self.a &= self.b;
-                self.setZeroFlag(self.a);
-                self.setFlag(false,Flags::Sub);
-                self.setFlag(true,Flags::HCarry);
-                self.setFlag(false,Flags::Carry);
+                self.a = self.AND(self.a, self.b);
             },
             0xA1 => { // AND A,C
-                self.a &= self.c;
-                self.setZeroFlag(self.a);
-                self.setFlag(false,Flags::Sub);
-                self.setFlag(true,Flags::HCarry);
-                self.setFlag(false,Flags::Carry);
+                self.a = self.AND(self.a, self.c);
             },
             0xA2 => { // AND A,D
-                self.a &= self.d;
-                self.setZeroFlag(self.a);
-                self.setFlag(false,Flags::Sub);
-                self.setFlag(true,Flags::HCarry);
-                self.setFlag(false,Flags::Carry);
+                self.a = self.AND(self.a, self.d);
             },
             0xA3 => { // AND A,E
-                self.a &= self.e;
-                self.setZeroFlag(self.a);
-                self.setFlag(false,Flags::Sub);
-                self.setFlag(true,Flags::HCarry);
-                self.setFlag(false,Flags::Carry);
+                self.a = self.AND(self.a, self.e);
             },
             0xA4 => { // AND A,H
-                self.a &= self.h;
-                self.setZeroFlag(self.a);
-                self.setFlag(false,Flags::Sub);
-                self.setFlag(true,Flags::HCarry);
-                self.setFlag(false,Flags::Carry);
+                self.a = self.AND(self.a, self.h);
             },
             0xA5 => { // AND A,L
-                self.a &= self.l;
-                self.setZeroFlag(self.a);
-                self.setFlag(false,Flags::Sub);
-                self.setFlag(true,Flags::HCarry);
-                self.setFlag(false,Flags::Carry);
+                self.a = self.AND(self.a, self.l);
             },
             0xA6 => { // AND A,(HL)
                 match self.cyclesLeft {
-                    2 => {}
-                    1 => {self.a &= self.readByte(self.getHL());
-                        self.setZeroFlag(self.a);
-                        self.setFlag(false,Flags::Sub);
-                        self.setFlag(true,Flags::HCarry);
-                        self.setFlag(false,Flags::Carry);}
+                    2 => {self.fetched = self.readByte(self.getHL())}
+                    1 => {self.a = self.AND(self.a, self.fetched);}
                     _ => {panic!("cycles left incorrect")}
                 }
             },
             0xA7 => { // AND A,A
-                self.a &= self.a;
-                self.setZeroFlag(self.a);
-                self.setFlag(false,Flags::Sub);
-                self.setFlag(true,Flags::HCarry);
-                self.setFlag(false,Flags::Carry);
+                self.a = self.AND(self.a, self.a);
             },
             0xA8 => { // XOR A,B
-                self.a ^= self.b;
-                self.setZeroFlag(self.a);
-                self.setFlag(false,Flags::Sub);
-                self.setFlag(false,Flags::HCarry);
-                self.setFlag(false,Flags::Carry);
+                self.a = self.XOR(self.a, self.b);
             },
             0xA9 => { // XOR A,C
-                self.a ^= self.c;
-                self.setZeroFlag(self.a);
-                self.setFlag(false,Flags::Sub);
-                self.setFlag(false,Flags::HCarry);
-                self.setFlag(false,Flags::Carry);
+                self.a = self.XOR(self.a, self.c);
             },
             0xAA => { // XOR A,D
-                self.a ^= self.d;
-                self.setZeroFlag(self.a);
-                self.setFlag(false,Flags::Sub);
-                self.setFlag(false,Flags::HCarry);
-                self.setFlag(false,Flags::Carry);
+                self.a = self.XOR(self.a, self.d);
             },
             0xAB => { // XOR A,E
-                self.a ^= self.e;
-                self.setZeroFlag(self.a);
-                self.setFlag(false,Flags::Sub);
-                self.setFlag(false,Flags::HCarry);
-                self.setFlag(false,Flags::Carry);
+                self.a = self.XOR(self.a, self.e);
             },
             0xAC => { // XOR A,H
-                self.a ^= self.h;
-                self.setZeroFlag(self.a);
-                self.setFlag(false,Flags::Sub);
-                self.setFlag(false,Flags::HCarry);
-                self.setFlag(false,Flags::Carry);
+                self.a = self.XOR(self.a, self.h);
             },
             0xAD => { // XOR A,L
-                self.a ^= self.l;
-                self.setZeroFlag(self.a);
-                self.setFlag(false,Flags::Sub);
-                self.setFlag(false,Flags::HCarry);
-                self.setFlag(false,Flags::Carry);
+                self.a = self.XOR(self.a, self.l);
             },
             0xAE => { // XOR A,(HL)
                 match self.cyclesLeft {
-                    2 => {}
-                    1 => {self.a ^= self.readByte(self.getHL());
-                        self.setZeroFlag(self.a);
-                        self.setFlag(false,Flags::Sub);
-                        self.setFlag(false,Flags::HCarry);
-                        self.setFlag(false,Flags::Carry);}
+                    2 => {self.fetched = self.readByte(self.getHL())},
+                    1 => {self.a = self.XOR(self.a, self.fetched);},
                     _ => {panic!("cycles left incorrect")}
                 }
             },
             0xAF => { // XOR A,A
-                self.a ^= self.a;
-                self.setZeroFlag(self.a);
-                self.setFlag(false,Flags::Sub);
-                self.setFlag(false,Flags::HCarry);
-                self.setFlag(false,Flags::Carry);
+                self.a = self.XOR(self.a, self.a);
             },
 
             0xB0 => { // OR A,B
-                self.a |= self.b;
-                self.setZeroFlag(self.a);
-                self.setFlag(false,Flags::Sub);
-                self.setFlag(false,Flags::HCarry);
-                self.setFlag(false,Flags::Carry);
+                self.a = self.OR(self.a, self.b);
             },
             0xB1 => { // OR A,C
-                self.a |= self.c;
-                self.setZeroFlag(self.a);
-                self.setFlag(false,Flags::Sub);
-                self.setFlag(false,Flags::HCarry);
-                self.setFlag(false,Flags::Carry);
+                self.a = self.OR(self.a, self.c);
             },
             0xB2 => { // OR A,D
-                self.a |= self.d;
-                self.setZeroFlag(self.a);
-                self.setFlag(false,Flags::Sub);
-                self.setFlag(false,Flags::HCarry);
-                self.setFlag(false,Flags::Carry);
+                self.a = self.OR(self.a, self.d);
             },
             0xB3 => { // OR A,E
-                self.a |= self.e;
-                self.setZeroFlag(self.a);
-                self.setFlag(false,Flags::Sub);
-                self.setFlag(false,Flags::HCarry);
-                self.setFlag(false,Flags::Carry);
+                self.a = self.OR(self.a, self.e);
             },
             0xB4 => { // OR A,H
-                self.a |= self.h;
-                self.setZeroFlag(self.a);
-                self.setFlag(false,Flags::Sub);
-                self.setFlag(false,Flags::HCarry);
-                self.setFlag(false,Flags::Carry);
+                self.a = self.OR(self.a, self.h);
             },
             0xB5 => { // OR A,L
-                self.a |= self.l;
-                self.setZeroFlag(self.a);
-                self.setFlag(false,Flags::Sub);
-                self.setFlag(false,Flags::HCarry);
-                self.setFlag(false,Flags::Carry);
+                self.a = self.OR(self.a, self.l);
             },
             0xB6 => { // OR A,(HL)
                 match self.cyclesLeft {
-                    2 => {}
-                    1 => {self.a |= self.readByte(self.getHL());
-                        self.setZeroFlag(self.a);
-                        self.setFlag(false,Flags::Sub);
-                        self.setFlag(false,Flags::HCarry);
-                        self.setFlag(false,Flags::Carry);}
+                    2 => {self.fetched = self.readByte(self.getHL())}
+                    1 => {self.a = self.OR(self.a, self.fetched);}
                     _ => {panic!("cycles left incorrect")}
                 }
             },
             0xB7 => { // OR A,A
-                self.a |= self.a;
-                self.setZeroFlag(self.a);
-                self.setFlag(false,Flags::Sub);
-                self.setFlag(false,Flags::HCarry);
-                self.setFlag(false,Flags::Carry);
+                self.a = self.OR(self.a, self.a);
             },
 
             0xCB => {self.prefixedInstruction = true},
