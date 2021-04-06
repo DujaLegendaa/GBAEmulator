@@ -13,11 +13,14 @@ pub struct Z80{
     pub pc: u16,
 
     bus: Bus,
-    cyclesLeft: u8,
+    pub cyclesLeft: u8,
     fetched: u8,
     currentOpcode: u8,
 
-    prefixedInstruction: bool
+    pub prefixedInstruction: bool,
+    cbFlag: bool,
+    branchTaken: bool,
+    justBooted: bool
 }
 
 pub enum Flags {
@@ -52,7 +55,10 @@ impl Z80{
             fetched: 0,
             currentOpcode: 0,
 
-            prefixedInstruction: false
+            prefixedInstruction: false,
+            cbFlag: false,
+            branchTaken: false,
+            justBooted: true,
         }
     }
 
@@ -125,7 +131,7 @@ impl Z80 {
     pub fn readByte(&self, addr: u16) -> u8 {
         self.bus.cpuRead(addr)
     }
-    fn readBytes(&self, addr: u16) -> u16 {
+    pub fn readBytes(&self, addr: u16) -> u16 {
         u16::from_le_bytes([
             self.bus.cpuRead(addr),
             self.bus.cpuRead(addr + 1)
@@ -204,6 +210,34 @@ impl Z80 {
         self.setFlag(false,Flags::HCarry);
         self.setFlag(false,Flags::Carry);
         r
+    }
+
+    fn POP8(&mut self) -> u8 {
+        let d: u8 = self.readByte(self.sp);
+        self.sp += 1;
+        d
+    }
+
+    // mozda problemi oko sajkla ali sumnjam
+    fn RET_CONDITIAL(&mut self, condition: bool) {
+        match self.cyclesLeft {
+            5 => {},
+            4 => {if !condition {self.cyclesLeft = 1} else {self.branchTaken = true}},
+            3 => {},
+            2 => {self.pc = self.POP8() as u16},
+            1 => {self.pc = (self.POP8() as u16) << 8},
+            _ => {panic!("cycles left incorrect")}
+        }
+    }
+
+    fn JP_CONDITIAL(&mut self, condition: bool, addr: u16) {
+        match self.cyclesLeft {
+            4 => {},
+            3 => {},
+            2 => {if !condition {self.cyclesLeft = 1} else {self.branchTaken = true}},
+            1 => {self.pc = addr;},
+            _ => {panic!("cycles left incorrect")}
+        }
     }
 
     fn unprefixedOpcodes(&mut self, opcode: u8){
@@ -1158,20 +1192,90 @@ impl Z80 {
                 self.SUB(self.a, self.a);
             },
 
-            0xCB => {self.prefixedInstruction = true},
+            0xC0 => { // RET NZ
+                self.RET_CONDITIAL(!self.getFlag(Flags::Zero));
+            },
+            0xC1 => { // POP BC
+                match self.cyclesLeft {
+                    3 => {},
+                    2 => {self.c = self.POP8()},
+                    1 => {self.b = self.POP8()},
+                    _ => {panic!("cycles left incorrect")}
+                }
+            },
+            0xC2 => { // JP NZ,u16
+                self.JP_CONDITIAL(!self.getFlag(Flags::Zero), self.readBytes(self.pc + 1));
+            },
+
+            0xCB => { // CB Prefix
+                self.cbFlag = true
+            },
+
+            0xD0 => { // RET NC
+                self.RET_CONDITIAL(!self.getFlag(Flags::Carry));
+            },
+            0xD1 => { // POP DE
+                match self.cyclesLeft {
+                    3 => {},
+                    2 => {self.e = self.POP8()},
+                    1 => {self.d = self.POP8()},
+                    _ => {panic!("cycles left incorrect")}
+                }
+            },
+            0xD2 => { // JP NC,u16
+                self.JP_CONDITIAL(!self.getFlag(Flags::Carry), self.readBytes(self.pc + 1));
+            },
+
+            0xE0 => { // LD (0xFF00+u8),A
+                match self.cyclesLeft {
+                    3 => {},
+                    2 => {self.fetched = self.readByte(self.pc + 1)},
+                    1 => {self.writeByte(0xFF00 + self.fetched as u16, self.a)},
+                    _ => {panic!("cycles left incorrect")}
+                }
+            },
+            0xE1 => { // POP HL
+                match self.cyclesLeft {
+                    3 => {},
+                    2 => {self.l = self.POP8()},
+                    1 => {self.h = self.POP8()},
+                    _ => {panic!("cycles left incorrect")}
+                }
+            },
+            
+
+            0xF0 => { // LD A,(0xFF00+u8)
+                match self.cyclesLeft {
+                    3 => {},
+                    2 => {self.fetched = self.readByte(self.pc + 1)},
+                    1 => {self.a = self.readByte(0xFF00 + self.fetched as u16)},
+                    _ => {panic!("cycles left incorrect")}
+                }
+            },
+            0xF1 => { // POP AF
+                match self.cyclesLeft {
+                    3 => {},
+                    2 => {self.f = self.POP8(); self.f = self.f & 0xF0},
+                    1 => {self.a = self.POP8()},
+                    _ => {panic!("cycles left incorrect")}
+                }
+            },
             _ => panic!("Unknown opcode or not implemented"),
         }
     }
 
-    fn prefixedOpcodes(&mut self, opcode: u8) {
+    fn prefixedOpcodes(&mut self, opcode: u8){
+
         match opcode {
-            _ => panic!("Prefixed opcodes not implemented")
+            _ => ()//panic!("Prefixed opcodes not implemented")
         }
+        if self.cyclesLeft == 0 {self.prefixedInstruction = false}
     }
 
     fn executeOneCycle(&mut self, opcode: u8) {
-        if self.prefixedInstruction {
+        if self.prefixedInstruction || self.cbFlag {
             self.prefixedOpcodes(opcode);
+            self.cbFlag = false;
         } else {
             self.unprefixedOpcodes(opcode);
         }
@@ -1188,44 +1292,53 @@ impl Z80 {
     }
 
     pub fn clock(&mut self) {
+        if self.justBooted {
+            self.currentOpcode = self.readByte(self.pc);
+            let (_, _, cycles) = self.getInstructionInfo(self.currentOpcode);
+            self.cyclesLeft = cycles;
+            self.justBooted = false;
+        }
+        self.executeOneCycle(self.currentOpcode);
+
         if self.cyclesLeft == 0 {
             let (_, length, _) = self.getInstructionInfo(self.currentOpcode);
-            self.pc = self.pc.wrapping_add(length as u16);
-            self.prefixedInstruction = false;
+            if !self.branchTaken {
+                self.pc = self.pc.wrapping_add(length as u16);
+            }
+            self.branchTaken = false;
             
             self.currentOpcode = self.readByte(self.pc);
             let (_, _, cycles) = self.getInstructionInfo(self.currentOpcode);
             self.cyclesLeft = cycles;
         }
-        self.executeOneCycle(self.currentOpcode);
     }
 }
 
-const UNPREFIXED_INSTRUCTION_TABLE: [(&str, u8, u8); 256]= [
-    ("NOP", 1, 1),          ("LD BC,u16", 3, 3),    ("LD (BC), A", 1, 2),   ("INC BC", 1, 2),       ("INC B", 1, 1),        ("DEC B", 1, 1),        ("LD B,u8", 2, 2),      ("RLCA", 1, 1),         ("LD (u16),SP", 3, 5),  ("ADD HL,BC", 1, 2),    ("LD A,(BC)", 1, 2),    ("DEC BC", 1, 2),   ("INC C", 1, 1),    ("DEC C", 1, 1),    ("LD C,u8", 2, 2),      ("RRCA", 1, 1),
-    ("STOP", 2, 1),         ("LD DE,u16", 3, 3),    ("LD (DE), A", 1, 2),   ("INC DE", 1, 2),       ("INC D", 1, 1),        ("DEC D", 1, 1),        ("LD D,u8", 2, 2),      ("RLA", 1, 1),          ("JR i8", 2, 3),        ("ADD HL,DE", 1, 2),    ("LD A,(DE)", 1, 2),    ("DEC DE", 1, 2),   ("INC E", 1, 1),    ("DEC E", 1, 1),    ("LD E,u8", 2, 2),      ("PRA", 1, 1),
-    ("", 0, 0),             ("LD HL,16", 3, 3),     ("LD (HL++), A", 1, 2), ("INC HL", 1, 2),       ("INC H", 1, 1),        ("DEC H", 1, 1),        ("LD H,u8", 2, 2),      ("DAA", 1, 1),          ("JR Z,i8", 2, 2),      ("ADD HL,HL", 1, 2),    ("LD A,(HL++)", 1, 2),  ("DEC HL", 1, 2),   ("INC L", 1, 1),    ("DEC L", 1, 1),    ("LD L,u8", 2, 2),      ("CPL", 1, 1),
-    ("", 0, 0),             ("LD SP,16", 3, 3),     ("LD (HL--), A", 1, 2), ("INC SP", 1, 2),       ("INC (HL)", 1, 3),     ("DEC (HL)", 1, 3),     ("LD (HL),u8", 2, 3),   ("SCF", 1, 1),          ("JR C,i8", 2, 2),      ("ADD HL,SP", 1, 2),    ("LD A,(HL--)", 1, 2),  ("DEC SP", 1, 2),   ("INC A", 1, 1),    ("DEC A", 1, 1),    ("LD A,u8", 2, 2),      ("CCF", 1, 1),
-    ("LD B,B", 1, 1),       ("LD B,C", 1, 1),       ("LD B,D", 1, 1),       ("LD B,E", 1, 1),       ("LD B,H", 1, 1),       ("LD B,L", 1, 1),       ("LD B,(HL)", 1, 2),    ("LD B,A", 1, 1),       ("LD C,B", 1, 1),       ("LD C,C", 1, 1),       ("LD C,D", 1, 1),       ("LD C,E", 1, 1),   ("LD C,H", 1, 1),   ("LD C,L", 1, 1),   ("LD C,(HL)", 1, 2),    ("LD C,A", 1, 1),
-    ("LD D,B", 1, 1),       ("LD D,C", 1, 1),       ("LD D,D", 1, 1),       ("LD D,E", 1, 1),       ("LD D,H", 1, 1),       ("LD D,L", 1, 1),       ("LD D,(HL)", 1, 2),    ("LD D,A", 1, 1),       ("LD E,B", 1, 1),       ("LD E,C", 1, 1),       ("LD E,D", 1, 1),       ("LD E,E", 1, 1),   ("LD E,H", 1, 1),   ("LD E,L", 1, 1),   ("LD E,(HL)", 1, 2),    ("LD E,A", 1, 1),
-    ("LD H,B", 1, 1),       ("LD H,C", 1, 1),       ("LD H,D", 1, 1),       ("LD H,E", 1, 1),       ("LD H,H", 1, 1),       ("LD H,L", 1, 1),       ("LD H,(HL)", 1, 2),    ("LD H,A", 1, 1),       ("LD L,B", 1, 1),       ("LD L,C", 1, 1),       ("LD L,D", 1, 1),       ("LD L,E", 1, 1),   ("LD L,H", 1, 1),   ("LD L,L", 1, 1),   ("LD L,(HL)", 1, 2),    ("LD L,A", 1, 1),
-    ("LD (HL),B", 1, 2),    ("LD (HL),C", 1, 2),    ("LD (HL),D", 1, 2),    ("LD (HL),E", 1, 2),    ("LD (HL),H", 1, 2),    ("LD (HL),L", 1, 2),    ("HALT", 1, 1),         ("LD (HL),A", 1, 2),    ("LD A,B", 1, 1),       ("LD A,C", 1, 1),       ("LD A,D", 1, 1),       ("LD A,E", 1, 1),   ("LD A,H", 1, 1),   ("LD A,L", 1, 1),   ("LD A,(HL)", 1, 2),    ("LD A,A", 1, 1),
-    ("ADD A,B", 1, 1),      ("ADD A,C", 1, 1),      ("ADD A,D", 1, 1),      ("ADD A,E", 1, 1),      ("ADD A,H", 1, 1),      ("ADD A,L", 1, 1),      ("ADD A,(HL)", 1, 2),   ("ADD A,A", 1, 1),      ("ADC A,B", 1, 1),      ("ADC A,C", 1, 1),      ("ADC A,D", 1, 1),      ("ADC A,E", 1, 1),  ("ADC A,H", 1, 1),  ("ADC A,L", 1, 1),  ("ADC A,(HL)", 1, 2),   ("ADC A,A", 1, 1),
-    ("SUB A,B", 1, 1),      ("SUB A,C", 1, 1),      ("SUB A,D", 1, 1),      ("SUB A,E", 1, 1),      ("SUB A,H", 1, 1),      ("SUB A,L", 1, 1),      ("SUB A,(HL)", 1, 2),   ("SUB A,A", 1, 1),      ("SBC A,B", 1, 1),      ("SBC A,C", 1, 1),      ("SBC A,D", 1, 1),      ("SBC A,E", 1, 1),  ("SBC A,H", 1, 1),  ("SBC A,L", 1, 1),  ("SBC A,(HL)", 1, 2),   ("SBC A,A", 1, 1),
-    ("AND A,B", 1, 1),      ("AND A,C", 1, 1),      ("AND A,D", 1, 1),      ("AND A,E", 1, 1),      ("AND A,H", 1, 1),      ("AND A,L", 1, 1),      ("AND A,(HL)", 1, 2),   ("AND A,A", 1, 1),      ("XOR A,B", 1, 1),      ("XOR A,C", 1, 1),      ("XOR A,D", 1, 1),      ("XOR A,E", 1, 1),  ("XOR A,H", 1, 1),  ("XOR A,L", 1, 1),  ("XOR A,(HL)", 1, 2),   ("XOR A,A", 1, 1),
-    ("OR A,B", 1, 1),       ("OR A,C", 1, 1),       ("OR A,D", 1, 1),       ("OR A,E", 1, 1),       ("OR A,H", 1, 1),       ("OR A,L", 1, 1),       ("OR A,(HL)", 1, 2),    ("OR A,A", 1, 1),       ("CP A,B", 1, 1),       ("CP A,C", 1, 1),       ("CP A,D", 1, 1),       ("CP A,E", 1, 1),   ("CP A,H", 1, 1),   ("CP A,L", 1, 1),   ("CP A,(HL)", 1, 2),    ("CP A,A", 1, 1),
-    ("", 0, 0), ("", 0, 0), ("", 0, 0), ("", 0, 0), ("", 0, 0), ("", 0, 0), ("", 0, 0), ("", 0, 0), ("", 0, 0), ("", 0, 0), ("", 0, 0), ("", 0, 0), ("", 0, 0), ("", 0, 0), ("", 0, 0), ("", 0, 0),
-    ("", 0, 0), ("", 0, 0), ("", 0, 0), ("", 0, 0), ("", 0, 0), ("", 0, 0), ("", 0, 0), ("", 0, 0), ("", 0, 0), ("", 0, 0), ("", 0, 0), ("", 0, 0), ("", 0, 0), ("", 0, 0), ("", 0, 0), ("", 0, 0),
-    ("", 0, 0), ("", 0, 0), ("", 0, 0), ("", 0, 0), ("", 0, 0), ("", 0, 0), ("", 0, 0), ("", 0, 0), ("", 0, 0), ("", 0, 0), ("", 0, 0), ("", 0, 0), ("", 0, 0), ("", 0, 0), ("", 0, 0), ("", 0, 0),
-    ("", 0, 0), ("", 0, 0), ("", 0, 0), ("", 0, 0), ("", 0, 0), ("", 0, 0), ("", 0, 0), ("", 0, 0), ("", 0, 0), ("", 0, 0), ("", 0, 0), ("", 0, 0), ("", 0, 0), ("", 0, 0), ("", 0, 0), ("", 0, 0),
+pub const UNPREFIXED_INSTRUCTION_TABLE: [(&str, u8, u8); 256]= [
+    ("NOP", 1, 1),              ("LD BC,u16", 3, 3),    ("LD (BC), A", 1, 2),   ("INC BC", 1, 2),       ("INC B", 1, 1),        ("DEC B", 1, 1),        ("LD B,u8", 2, 2),      ("RLCA", 1, 1),         ("LD (u16),SP", 3, 5),  ("ADD HL,BC", 1, 2),    ("LD A,(BC)", 1, 2),    ("DEC BC", 1, 2),   ("INC C", 1, 1),    ("DEC C", 1, 1),    ("LD C,u8", 2, 2),      ("RRCA", 1, 1),
+    ("STOP", 2, 1),             ("LD DE,u16", 3, 3),    ("LD (DE), A", 1, 2),   ("INC DE", 1, 2),       ("INC D", 1, 1),        ("DEC D", 1, 1),        ("LD D,u8", 2, 2),      ("RLA", 1, 1),          ("JR i8", 2, 3),        ("ADD HL,DE", 1, 2),    ("LD A,(DE)", 1, 2),    ("DEC DE", 1, 2),   ("INC E", 1, 1),    ("DEC E", 1, 1),    ("LD E,u8", 2, 2),      ("PRA", 1, 1),
+    ("", 0, 0),                 ("LD HL,16", 3, 3),     ("LD (HL++), A", 1, 2), ("INC HL", 1, 2),       ("INC H", 1, 1),        ("DEC H", 1, 1),        ("LD H,u8", 2, 2),      ("DAA", 1, 1),          ("JR Z,i8", 2, 3),      ("ADD HL,HL", 1, 2),    ("LD A,(HL++)", 1, 2),  ("DEC HL", 1, 2),   ("INC L", 1, 1),    ("DEC L", 1, 1),    ("LD L,u8", 2, 2),      ("CPL", 1, 1),
+    ("", 0, 0),                 ("LD SP,16", 3, 3),     ("LD (HL--), A", 1, 2), ("INC SP", 1, 2),       ("INC (HL)", 1, 3),     ("DEC (HL)", 1, 3),     ("LD (HL),u8", 2, 3),   ("SCF", 1, 1),          ("JR C,i8", 2, 3),      ("ADD HL,SP", 1, 2),    ("LD A,(HL--)", 1, 2),  ("DEC SP", 1, 2),   ("INC A", 1, 1),    ("DEC A", 1, 1),    ("LD A,u8", 2, 2),      ("CCF", 1, 1),
+    ("LD B,B", 1, 1),           ("LD B,C", 1, 1),       ("LD B,D", 1, 1),       ("LD B,E", 1, 1),       ("LD B,H", 1, 1),       ("LD B,L", 1, 1),       ("LD B,(HL)", 1, 2),    ("LD B,A", 1, 1),       ("LD C,B", 1, 1),       ("LD C,C", 1, 1),       ("LD C,D", 1, 1),       ("LD C,E", 1, 1),   ("LD C,H", 1, 1),   ("LD C,L", 1, 1),   ("LD C,(HL)", 1, 2),    ("LD C,A", 1, 1),
+    ("LD D,B", 1, 1),           ("LD D,C", 1, 1),       ("LD D,D", 1, 1),       ("LD D,E", 1, 1),       ("LD D,H", 1, 1),       ("LD D,L", 1, 1),       ("LD D,(HL)", 1, 2),    ("LD D,A", 1, 1),       ("LD E,B", 1, 1),       ("LD E,C", 1, 1),       ("LD E,D", 1, 1),       ("LD E,E", 1, 1),   ("LD E,H", 1, 1),   ("LD E,L", 1, 1),   ("LD E,(HL)", 1, 2),    ("LD E,A", 1, 1),
+    ("LD H,B", 1, 1),           ("LD H,C", 1, 1),       ("LD H,D", 1, 1),       ("LD H,E", 1, 1),       ("LD H,H", 1, 1),       ("LD H,L", 1, 1),       ("LD H,(HL)", 1, 2),    ("LD H,A", 1, 1),       ("LD L,B", 1, 1),       ("LD L,C", 1, 1),       ("LD L,D", 1, 1),       ("LD L,E", 1, 1),   ("LD L,H", 1, 1),   ("LD L,L", 1, 1),   ("LD L,(HL)", 1, 2),    ("LD L,A", 1, 1),
+    ("LD (HL),B", 1, 2),        ("LD (HL),C", 1, 2),    ("LD (HL),D", 1, 2),    ("LD (HL),E", 1, 2),    ("LD (HL),H", 1, 2),    ("LD (HL),L", 1, 2),    ("HALT", 1, 1),         ("LD (HL),A", 1, 2),    ("LD A,B", 1, 1),       ("LD A,C", 1, 1),       ("LD A,D", 1, 1),       ("LD A,E", 1, 1),   ("LD A,H", 1, 1),   ("LD A,L", 1, 1),   ("LD A,(HL)", 1, 2),    ("LD A,A", 1, 1),
+    ("ADD A,B", 1, 1),          ("ADD A,C", 1, 1),      ("ADD A,D", 1, 1),      ("ADD A,E", 1, 1),      ("ADD A,H", 1, 1),      ("ADD A,L", 1, 1),      ("ADD A,(HL)", 1, 2),   ("ADD A,A", 1, 1),      ("ADC A,B", 1, 1),      ("ADC A,C", 1, 1),      ("ADC A,D", 1, 1),      ("ADC A,E", 1, 1),  ("ADC A,H", 1, 1),  ("ADC A,L", 1, 1),  ("ADC A,(HL)", 1, 2),   ("ADC A,A", 1, 1),
+    ("SUB A,B", 1, 1),          ("SUB A,C", 1, 1),      ("SUB A,D", 1, 1),      ("SUB A,E", 1, 1),      ("SUB A,H", 1, 1),      ("SUB A,L", 1, 1),      ("SUB A,(HL)", 1, 2),   ("SUB A,A", 1, 1),      ("SBC A,B", 1, 1),      ("SBC A,C", 1, 1),      ("SBC A,D", 1, 1),      ("SBC A,E", 1, 1),  ("SBC A,H", 1, 1),  ("SBC A,L", 1, 1),  ("SBC A,(HL)", 1, 2),   ("SBC A,A", 1, 1),
+    ("AND A,B", 1, 1),          ("AND A,C", 1, 1),      ("AND A,D", 1, 1),      ("AND A,E", 1, 1),      ("AND A,H", 1, 1),      ("AND A,L", 1, 1),      ("AND A,(HL)", 1, 2),   ("AND A,A", 1, 1),      ("XOR A,B", 1, 1),      ("XOR A,C", 1, 1),      ("XOR A,D", 1, 1),      ("XOR A,E", 1, 1),  ("XOR A,H", 1, 1),  ("XOR A,L", 1, 1),  ("XOR A,(HL)", 1, 2),   ("XOR A,A", 1, 1),
+    ("OR A,B", 1, 1),           ("OR A,C", 1, 1),       ("OR A,D", 1, 1),       ("OR A,E", 1, 1),       ("OR A,H", 1, 1),       ("OR A,L", 1, 1),       ("OR A,(HL)", 1, 2),    ("OR A,A", 1, 1),       ("CP A,B", 1, 1),       ("CP A,C", 1, 1),       ("CP A,D", 1, 1),       ("CP A,E", 1, 1),   ("CP A,H", 1, 1),   ("CP A,L", 1, 1),   ("CP A,(HL)", 1, 2),    ("CP A,A", 1, 1),
+    ("RET NZ", 1, 5),           ("POP BC", 1, 3),       ("JP NZ,u16", 3, 4),    ("", 0, 0), ("", 0, 0), ("", 0, 0), ("", 0, 0), ("", 0, 0), ("CB", 1, 1), ("", 0, 0), ("", 0, 0), ("CB", 1, 1), ("", 0, 0), ("", 0, 0), ("", 0, 0), ("", 0, 0),
+    ("RET NC", 1, 5),           ("POP DE", 1, 3),       ("JP NC,u16", 3, 4),    ("", 0, 0), ("", 0, 0), ("", 0, 0), ("", 0, 0), ("", 0, 0), ("", 0, 0), ("", 0, 0), ("", 0, 0), ("", 0, 0), ("", 0, 0), ("", 0, 0), ("", 0, 0), ("", 0, 0),
+    ("LD (0xFF00+u8),A", 2, 3), ("POP HL", 1, 3),       ("", 0, 0), ("", 0, 0), ("", 0, 0), ("", 0, 0), ("", 0, 0), ("", 0, 0), ("", 0, 0), ("", 0, 0), ("", 0, 0), ("", 0, 0), ("", 0, 0), ("", 0, 0), ("", 0, 0), ("", 0, 0),
+    ("LD A,(0xFF00+u8)", 2, 3), ("POP AF", 1, 3),       ("", 0, 0), ("", 0, 0), ("", 0, 0), ("", 0, 0), ("", 0, 0), ("", 0, 0), ("", 0, 0), ("", 0, 0), ("", 0, 0), ("", 0, 0), ("", 0, 0), ("", 0, 0), ("", 0, 0), ("", 0, 0),
 ];
 
 
-const PREFIXED_INSTRUCTION_TABLE: [(&str, u8, u8); 256] = [
+pub const PREFIXED_INSTRUCTION_TABLE: [(&str, u8, u8); 256] = [
     ("RLC B", 1, 1),    ("RLC C", 1, 1),    ("RLC D", 1, 1),    ("RLC E", 1, 1),    ("RLC H", 1, 1),    ("RLC L", 1, 1),       ("RLC (HL)", 0, 0),   ("RLC A", 0, 0),       ("RRC B", 0, 0),    ("RRC C", 0, 0),    ("RRC D", 0, 0),    ("RRC E", 0, 0),    ("RRC H", 0, 0),    ("RRC L", 0, 0),    ("RRC (HL)", 0, 0),     ("RRC A", 0, 0),
     ("RL B", 1, 1),     ("RL C", 1, 1),     ("RL D", 1, 1),     ("RL E", 1, 1),     ("RL H", 1, 1),     ("RL L", 1, 1),        ("RL (HL)", 0, 0),    ("RL A", 0, 0),        ("RR B", 0, 0),     ("RR C", 0, 0),     ("RR D", 0, 0),     ("RR E", 0, 0),     ("RR H", 0, 0),     ("RR L", 0, 0),     ("RR", 0, 0),     ("RR A", 0, 0),
     ("SLA B", 1, 1),    ("SLA C", 1, 1),    ("SLA D", 1, 1),    ("SLA E", 1, 1),    ("SLA H", 1, 1),    ("SLA L", 1, 1),       ("SLA (HL)", 0, 0),   ("SLA A", 0, 0),       ("SRA B", 0, 0),    ("SRA C", 0, 0),    ("SRA D", 0, 0),    ("SRA E", 0, 0),    ("SRA H", 0, 0),    ("SRA L", 0, 0),    ("SRA", 0, 0),     ("SRA A", 0, 0),
-    ("SWAP B", 1, 1),   ("SWAP C", 1, 1),   ("SWAP D", 1, 1),   ("SWAP E", 1, 1),   ("SWAP H", 1, 1),   ("SWAP L", 1, 1),      ("SWAP (HL)", 0, 0),  ("SWAP A", 0, 0),      ("SRL B", 0, 0),    ("SRL C", 0, 0),    ("SRL D", 0, 0),    ("SRL E", 0, 0),    ("SRL H", 0, 0),    ("SRL L", 0, 0),    ("BIT", 0, 0),     ("SRL A", 0, 0),
+    ("SWAP B", 1, 1),   ("SWAP C", 1, 1),   ("SWAP D", 1, 1),   ("SWAP E", 1, 1),   ("SWAP H", 1, 1),   ("SWAP L", 1, 1),      ("SWAP (HL)", 0, 0),  ("SWAP A", 0, 0),      ("SRL B", 0, 0),    ("SRL C", 0, 0),    ("SRL D", 0, 0),    ("SRL E", 0, 0),    ("SRL H", 1, 1),    ("SRL L", 0, 0),    ("BIT", 0, 0),     ("SRL A", 0, 0),
     ("BIT 0,B", 1, 1),  ("BIT 0,C", 1, 1),  ("BIT 0,D", 1, 1),  ("BIT 0,E", 1, 1),  ("BIT 0,H", 1, 1),  ("BIT 0,L", 1, 1),     ("BIT 0,(HL)", 0, 0), ("BIT 0,A", 0, 0),     ("BIT 1,B", 0, 0),  ("BIT 1,C", 0, 0),  ("BIT 1,D", 0, 0),  ("BIT 1,E", 0, 0),  ("BIT 1,H", 0, 0),  ("BIT 1,L", 0, 0),  ("BIT", 0, 0),     ("BIT 1,A", 0, 0),
     ("BIT 2,B", 1, 1),  ("BIT 2,C", 1, 1),  ("BIT 2,D", 1, 1),  ("BIT 2,E", 1, 1),  ("BIT 2,H", 1, 1),  ("BIT 2,L", 1, 1),     ("BIT 2,(HL)", 0, 0), ("BIT 2,A", 0, 0),     ("BIT 3,B", 0, 0),  ("BIT 3,C", 0, 0),  ("BIT 3,D", 0, 0),  ("BIT 3,E", 0, 0),  ("BIT 3,H", 0, 0),  ("BIT 3,L", 0, 0),  ("BIT", 0, 0),     ("BIT 3,A", 0, 0),
     ("BIT 4,B", 1, 1),  ("BIT 4,C", 1, 1),  ("BIT 4,D", 1, 1),  ("BIT 4,E", 1, 1),  ("BIT 4,H", 1, 1),  ("BIT 4,L", 1, 1),     ("BIT 4,(HL)", 0, 0), ("BIT 4,A", 0, 0),     ("BIT 5,B", 0, 0),  ("BIT 5,C", 0, 0),  ("BIT 5,D", 0, 0),  ("BIT 5,E", 0, 0),  ("BIT 5,H", 0, 0),  ("BIT 5,L", 0, 0),  ("", 0, 0),     ("BIT 5,A", 0, 0),

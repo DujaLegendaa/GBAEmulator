@@ -1,6 +1,6 @@
 #![allow(non_snake_case)]
 extern crate sfml;
-use crate::cpu::{Z80, Flags};
+use crate::cpu::{Z80, Flags, UNPREFIXED_INSTRUCTION_TABLE, PREFIXED_INSTRUCTION_TABLE};
 use sfml::{
     graphics::{
         Text, RenderTarget, RenderWindow, Color, Font, Transformable
@@ -44,25 +44,33 @@ pub fn showRegisters(c: &Z80) -> String {
     return nStr;
 }
 
-/*
-pub fn showCode(c: &Cpu, startIndex: u16, nInstructions: u16) -> String{
+
+pub fn showCode(c: &Z80, startIndex: u16, nInstructions: u16) -> String{
     let mut nStr = String::new();
-    let mut opcodeLen = 0;
     let mut addr = startIndex;
+    let mut prefixed = false;
+    let mut opcodeLen = 0;
     for _i in 0..nInstructions {
         addr += opcodeLen;
         nStr.push_str(&format!("{:#06X}\t", addr));
-        match c.dissasemble(addr) {
-            (x, y, _) => {
-                nStr.push_str(&x);
-                opcodeLen = y.into()
-            }
+        let (name, length, cycles) = if prefixed {PREFIXED_INSTRUCTION_TABLE[c.readByte(addr) as usize]} else {UNPREFIXED_INSTRUCTION_TABLE[c.readByte(addr) as usize]};
+
+        if name == "CB" && !prefixed {
+            prefixed = true;
+        } else {
+            prefixed = false;
         }
+        match length {
+            3 => {nStr.push_str(&format!("{} #{:#06X} [{}]", name, c.readBytes(addr + 1), cycles))},
+            2 => {nStr.push_str(&format!("{} #{:#04X}[{}]", name, c.readByte(addr + 1), cycles))},
+            _ => {nStr.push_str(&format!("{} [{}]", name, cycles))},
+        }
+        opcodeLen = length as u16;
         nStr.push('\n');
     }
     return nStr;
 }
-*/
+
 
 pub fn renderFullDissassembly(c: &Z80, ramPage1: u16, ramPage2: u16, f: &Font, w: &mut RenderWindow) {
     let mut ramText = Text::default();
@@ -105,15 +113,15 @@ pub fn renderFullDissassembly(c: &Z80, ramPage1: u16, ramPage2: u16, f: &Font, w
     registerText.set_fill_color(Color::WHITE);
     registerText.set_position((tArr[0].position().x, tArr[0].local_bounds().height + 20.0));
 
-    /*
+
     let mut codeText = Text::default();
     codeText.set_font(f);
-    codeText.set_string(&showCode(c, c.registers.pc, 30));
+    codeText.set_string(&showCode(c, c.pc, 30));
     codeText.set_character_size(CHAR_SIZE);
     codeText.set_fill_color(Color::WHITE);
     codeText.set_position((registerText.position().x, registerText.local_bounds().height + registerText.position().y + 20.0));
 
-    
+    /*
     let mut registerBinaryText = Text::default();
     registerBinaryText.set_font(f);
     registerBinaryText.set_string(&showRegistersBinary(c));
@@ -127,8 +135,8 @@ pub fn renderFullDissassembly(c: &Z80, ramPage1: u16, ramPage2: u16, f: &Font, w
         w.draw(e);
     }
     w.draw(&registerText);
-    /*
+    
     w.draw(&codeText);
-    w.draw(&registerBinaryText);
-    */
+    //w.draw(&registerBinaryText);
+    
 }
