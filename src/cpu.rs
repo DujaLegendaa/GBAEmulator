@@ -169,21 +169,18 @@ impl Z80 {
                     1 => {self.setBC(self.getBC().wrapping_add(1))},
                     _ => {panic!("cycles left incorrect")},
                 }
-                
             },
             0x04 => { // INC B
                 self.setFlag((self.b & 0xf) + 1 > 0xf, Flags::HCarry);
                 self.b = self.b.wrapping_add(1);
                 self.setZeroFlag(self.b);
                 self.setFlag(false, Flags::Sub);
-                
             },
             0x05 => { // DEC B
                 self.setFlag((self.b & 0xf) as i8 - 1 < 0, Flags::HCarry);
                 self.b = self.b.wrapping_sub(1);
                 self.setZeroFlag(self.b);
                 self.setFlag(true, Flags::Sub);
-                
             },
             0x06 => { // LD B,u8
                 match self.cyclesLeft {
@@ -209,7 +206,54 @@ impl Z80 {
                     1 => {self.sp |= (self.fetched as u16) << 8},
                     _ => panic!("cycles left incorrect")
                 }
-            }
+            },
+            0x09 => { // ADD HL,BC *nisam siguran*
+                match self.cyclesLeft {
+                    2 => {},
+                    1 => {
+                        let (result, carry) = self.getHL().overflowing_add(self.getBC());
+                        self.setFlag((self.getHL() & 0xf) + (self.getBC() & 0xf) > 0xf, Flags::HCarry);
+                        self.writeBytes(self.getHL(), result);
+                        self.setFlag(carry, Flags::Carry);
+                        self.setFlag(false, Flags::Sub);
+                    },
+                    _ => panic!("cycles left incorrect")
+                }
+            },
+            0x0a => { // LD A,(BC)
+                match self.cyclesLeft {
+                    2 => {}
+                    1 => {self.a = self.readByte(self.getBC())}
+                    _ => {panic!("cycles left incorrect")}
+                }
+                
+            },
+            0x0b => { // DEC BC
+                match self.cyclesLeft {
+                    2 => {},
+                    1 => {self.setBC(self.getBC().wrapping_sub(1))},
+                    _ => {panic!("cycles left incorrect")},
+                }
+            },
+            0x0c => { // INC C
+                self.setFlag((self.c & 0xf) + 1 > 0xf, Flags::HCarry);
+                self.c = self.c.wrapping_add(1);
+                self.setZeroFlag(self.b);
+                self.setFlag(false, Flags::Sub);
+            },
+            0x0d => { // DEC C
+                self.setFlag((self.c & 0xf) as i8 - 1 < 0, Flags::HCarry);
+                self.c = self.c.wrapping_sub(1);
+                self.setZeroFlag(self.b);
+                self.setFlag(true, Flags::Sub);
+            },
+            0x0e => { // LD C,u8
+                match self.cyclesLeft {
+                    2 => {},
+                    1 => {self.c = self.readByte(self.pc + 1)},
+                    _ => {panic!("cycles left incorrect")},
+                }
+            },
 
             0x11 => { // LD DE,u16
                 match self.cyclesLeft {
@@ -271,6 +315,56 @@ impl Z80 {
                 self.setFlag(false, Flags::HCarry);
                 
             },
+            0x18 => { // JR i8 NOT IMPLEMENTED
+                todo!("Implement JR i8");
+            },
+            0x19 => { // ADD HL,DE *nisam siguran*
+                match self.cyclesLeft {
+                    2 => {},
+                    1 => {
+                        let (result, carry) = self.getHL().overflowing_add(self.getDE());
+                        self.setFlag((self.getHL() & 0xf) + (self.getDE() & 0xf) > 0xf, Flags::HCarry);
+                        self.writeBytes(self.getHL(), result);
+                        self.setFlag(carry, Flags::Carry);
+                        self.setFlag(false, Flags::Sub);
+                    },
+                    _ => panic!("cycles left incorrect")
+                }
+            },
+            0x1a => { // LD A,(DE)
+                match self.cyclesLeft {
+                    2 => {}
+                    1 => {self.a = self.readByte(self.getDE())}
+                    _ => {panic!("cycles left incorrect")}
+                }
+                
+            },
+            0x1b => { // DEC DE
+                match self.cyclesLeft {
+                    2 => {},
+                    1 => {self.setDE(self.getDE().wrapping_sub(1))},
+                    _ => {panic!("cycles left incorrect")},
+                }
+            },
+            0x1c => { // INC E
+                self.setFlag((self.e & 0xf) + 1 > 0xf, Flags::HCarry);
+                self.e = self.e.wrapping_add(1);
+                self.setZeroFlag(self.b);
+                self.setFlag(false, Flags::Sub);
+            },
+            0x1d => { // DEC E
+                self.setFlag((self.e & 0xf) as i8 - 1 < 0, Flags::HCarry);
+                self.e = self.e.wrapping_sub(1);
+                self.setZeroFlag(self.b);
+                self.setFlag(true, Flags::Sub);
+            },
+            0x1e => { // LD E,u8
+                match self.cyclesLeft {
+                    2 => {},
+                    1 => {self.e = self.readByte(self.pc + 1)},
+                    _ => {panic!("cycles left incorrect")},
+                }
+            },
 
             0x21 => { // LD HL,u16
                 match self.cyclesLeft {
@@ -314,7 +408,56 @@ impl Z80 {
                 }
             },
             0x27 => { // DAA NOT IMPLEMENTED
-
+                todo!("Implement DAA");
+            },
+            0x28 => { // JR Z,i8 NOT IMPLEMENTED
+                todo!("Implement JR Z,i8");
+            },
+            0x29 => { // ADD HL,HL *nisam siguran*
+                match self.cyclesLeft {
+                    2 => {},
+                    1 => {
+                        let (result, carry) = self.getHL().overflowing_add(self.getHL());
+                        self.setFlag((self.getHL() & 0xf) + (self.getHL() & 0xf) > 0xf, Flags::HCarry);
+                        self.writeBytes(self.getHL(), result);
+                        self.setFlag(carry, Flags::Carry);
+                        self.setFlag(false, Flags::Sub);
+                    },
+                    _ => panic!("cycles left incorrect")
+                }
+            },
+            0x2a => { // LD A,(HL++)
+                match self.cyclesLeft {
+                    2 => {}
+                    1 => {self.a = self.readByte(self.getBC()); self.setHL(self.getHL().wrapping_add(1))}
+                    _ => {panic!("cycles left incorrect")}
+                }
+            },
+            0x2b => { // DEC HL
+                match self.cyclesLeft {
+                    2 => {},
+                    1 => {self.setHL(self.getHL().wrapping_sub(1))},
+                    _ => {panic!("cycles left incorrect")},
+                }
+            },
+            0x2c => { // INC L
+                self.setFlag((self.l & 0xf) + 1 > 0xf, Flags::HCarry);
+                self.l = self.l.wrapping_add(1);
+                self.setZeroFlag(self.b);
+                self.setFlag(false, Flags::Sub);
+            },
+            0x2d => { // DEC L
+                self.setFlag((self.l & 0xf) as i8 - 1 < 0, Flags::HCarry);
+                self.l = self.l.wrapping_sub(1);
+                self.setZeroFlag(self.b);
+                self.setFlag(true, Flags::Sub);
+            },
+            0x2e => { // LD L,u8
+                match self.cyclesLeft {
+                    2 => {},
+                    1 => {self.l = self.readByte(self.pc + 1)},
+                    _ => {panic!("cycles left incorrect")},
+                }
             },
 
             0x31 => { // LD SP,u16
@@ -383,7 +526,56 @@ impl Z80 {
                 self.setFlag(true, Flags::Carry);
                 self.setFlag(false, Flags::Sub);
                 self.setFlag(false, Flags::HCarry);
-            }
+            },
+            0x38 => { // JR C,i8 NOT IMPLEMENTED
+                todo!("Implement JR C,i8");
+            },
+            0x39 => { // ADD HL,DE *nisam siguran*
+                match self.cyclesLeft {
+                    2 => {},
+                    1 => {
+                        let (result, carry) = self.getHL().overflowing_add(self.sp);
+                        self.setFlag((self.getHL() & 0xf) + (self.sp & 0xf) > 0xf, Flags::HCarry);
+                        self.writeBytes(self.getHL(), result);
+                        self.setFlag(carry, Flags::Carry);
+                        self.setFlag(false, Flags::Sub);
+                    },
+                    _ => panic!("cycles left incorrect")
+                }
+            },
+            0x3a => { // LD A,(HL--)
+                match self.cyclesLeft {
+                    2 => {},
+                    1 => {self.a = self.readByte(self.getBC()); self.setHL(self.getHL().wrapping_sub(1))},
+                    _ => {panic!("cycles left incorrect")}
+                }
+            },
+            0x3b => { // DEC SP
+                match self.cyclesLeft {
+                    2 => {},
+                    1 => {self.sp = self.sp.wrapping_sub(1)},
+                    _ => {panic!("cycles left incorrect")},
+                }
+            },
+            0x3c => { // INC A
+                self.setFlag((self.a & 0xf) + 1 > 0xf, Flags::HCarry);
+                self.a = self.a.wrapping_add(1);
+                self.setZeroFlag(self.b);
+                self.setFlag(false, Flags::Sub);
+            },
+            0x3d => { // DEC A
+                self.setFlag((self.a & 0xf) as i8 - 1 < 0, Flags::HCarry);
+                self.a = self.a.wrapping_sub(1);
+                self.setZeroFlag(self.b);
+                self.setFlag(true, Flags::Sub);
+            },
+            0x3e => { // LD A,u8
+                match self.cyclesLeft {
+                    2 => {},
+                    1 => {self.a = self.readByte(self.pc + 1)},
+                    _ => {panic!("cycles left incorrect")},
+                }
+            },
 
             0x40 => { // LD B,B
                 self.b = self.b;
@@ -861,23 +1053,25 @@ impl Z80 {
     }
 }
 
-const UNPREFIXED_INSTRUCTION_TABLE: [(&str, u8, u8); 0xFF]= [
-    ("NOP", 1, 1),  ("LD BC,u16", 3, 3),    ("LD (BC), A", 1, 2),   ("INC BC", 1, 2), ("INC B", 1, 1),      ("DEC B", 1, 1),    ("LD B,u8", 2, 2),      ("RLCA", 1, 1), ("LD (u16),SP", 3, 5), ("", 0, 0), ("", 0, 0), ("", 0, 0), ("", 0, 0), ("", 0, 0), ("", 0, 0), ("", 0, 0), ("", 0, 0),
-    ("STOP", 2, 1), ("LD DE,u16", 3, 3),    ("LD (DE), A", 1, 2),   ("INC DE", 1, 2), ("INC D", 1, 1),      ("DEC D", 1, 1),    ("LD D,u8", 2, 2),      ("RLA", 1, 1), ("", 0, 0), ("", 0, 0), ("", 0, 0), ("", 0, 0), ("", 0, 0), ("", 0, 0), ("", 0, 0), ("", 0, 0), ("", 0, 0),
-    ("", 0, 0),     ("LD HL,16", 3, 3),     ("LD (HL++), A", 1, 2), ("INC HL", 1, 2), ("INC H", 1, 1),      ("DEC H", 1, 1),    ("LD H,u8", 2, 2),      ("DAA", 1, 1), ("", 0, 0), ("", 0, 0), ("", 0, 0), ("", 0, 0), ("", 0, 0), ("", 0, 0), ("", 0, 0), ("", 0, 0), ("", 0, 0),
-    ("", 0, 0),     ("LD SP,16", 3, 3),     ("LD (HL--), A", 1, 2), ("INC SP", 1, 2), ("INC (HL)", 1, 3),   ("DEC (HL)", 1, 3), ("LD (HL),u8", 2, 3),   ("SCF", 1, 1), ("", 0, 0), ("", 0, 0), ("", 0, 0), ("", 0, 0), ("", 0, 0), ("", 0, 0), ("", 0, 0), ("", 0, 0), ("", 0, 0),
-    ("", 0, 0), ("", 0, 0), ("", 0, 0), ("", 0, 0), ("", 0, 0), ("", 0, 0), ("", 0, 0), ("", 0, 0), ("", 0, 0), ("", 0, 0), ("", 0, 0), ("", 0, 0), ("", 0, 0), ("", 0, 0), ("", 0, 0), ("", 0, 0), ("", 0, 0),
-    ("", 0, 0), ("", 0, 0), ("", 0, 0), ("", 0, 0), ("", 0, 0), ("", 0, 0), ("", 0, 0), ("", 0, 0), ("", 0, 0), ("", 0, 0), ("", 0, 0), ("", 0, 0), ("", 0, 0), ("", 0, 0), ("", 0, 0), ("", 0, 0), ("", 0, 0),
-    ("", 0, 0), ("", 0, 0), ("", 0, 0), ("", 0, 0), ("", 0, 0), ("", 0, 0), ("", 0, 0), ("", 0, 0), ("", 0, 0), ("", 0, 0), ("", 0, 0), ("", 0, 0), ("", 0, 0), ("", 0, 0), ("", 0, 0), ("", 0, 0), ("", 0, 0),
-    ("", 0, 0), ("", 0, 0), ("", 0, 0), ("", 0, 0), ("", 0, 0), ("", 0, 0), ("", 0, 0), ("", 0, 0), ("", 0, 0), ("", 0, 0), ("", 0, 0), ("", 0, 0), ("", 0, 0), ("", 0, 0), ("", 0, 0), ("", 0, 0), ("", 0, 0),
-    ("", 0, 0), ("", 0, 0), ("", 0, 0), ("", 0, 0), ("", 0, 0), ("", 0, 0), ("", 0, 0), ("", 0, 0), ("", 0, 0), ("", 0, 0), ("", 0, 0), ("", 0, 0), ("", 0, 0), ("", 0, 0), ("", 0, 0), ("", 0, 0), ("", 0, 0),
-    ("", 0, 0), ("", 0, 0), ("", 0, 0), ("", 0, 0), ("", 0, 0), ("", 0, 0), ("", 0, 0), ("", 0, 0), ("", 0, 0), ("", 0, 0), ("", 0, 0), ("", 0, 0), ("", 0, 0), ("", 0, 0), ("", 0, 0), ("", 0, 0), ("", 0, 0),
-    ("", 0, 0), ("", 0, 0), ("", 0, 0), ("", 0, 0), ("", 0, 0), ("", 0, 0), ("", 0, 0), ("", 0, 0), ("", 0, 0), ("", 0, 0), ("", 0, 0), ("", 0, 0), ("", 0, 0), ("", 0, 0), ("", 0, 0), ("", 0, 0), ("", 0, 0),
-    ("", 0, 0), ("", 0, 0), ("", 0, 0), ("", 0, 0), ("", 0, 0), ("", 0, 0), ("", 0, 0), ("", 0, 0), ("", 0, 0), ("", 0, 0), ("", 0, 0), ("", 0, 0), ("", 0, 0), ("", 0, 0), ("", 0, 0), ("", 0, 0), ("", 0, 0),
-    ("", 0, 0), ("", 0, 0), ("", 0, 0), ("", 0, 0), ("", 0, 0), ("", 0, 0), ("", 0, 0), ("", 0, 0), ("", 0, 0), ("", 0, 0), ("", 0, 0), ("", 0, 0), ("", 0, 0), ("", 0, 0), ("", 0, 0), ("", 0, 0), ("", 0, 0),
-    ("", 0, 0), ("", 0, 0), ("", 0, 0), ("", 0, 0), ("", 0, 0), ("", 0, 0), ("", 0, 0), ("", 0, 0), ("", 0, 0), ("", 0, 0), ("", 0, 0), ("", 0, 0), ("", 0, 0), ("", 0, 0), ("", 0, 0), ("", 0, 0), ("", 0, 0),
-    ("", 0, 0), ("", 0, 0), ("", 0, 0), ("", 0, 0), ("", 0, 0), ("", 0, 0), ("", 0, 0), ("", 0, 0), ("", 0, 0), ("", 0, 0), ("", 0, 0), ("", 0, 0), ("", 0, 0), ("", 0, 0), ("", 0, 0), ("", 0, 0), ("", 0, 0)
+const UNPREFIXED_INSTRUCTION_TABLE: [(&str, u8, u8); 256]= [
+    ("NOP", 1, 1),  ("LD BC,u16", 3, 3),    ("LD (BC), A", 1, 2),   ("INC BC", 1, 2), ("INC B", 1, 1),      ("DEC B", 1, 1),    ("LD B,u8", 2, 2),      ("RLCA", 1, 1), ("LD (u16),SP", 3, 5),  ("ADD HL,BC", 1, 2), ("LD A,(BC)", 1, 2),   ("DEC BC", 1, 2), ("INC C", 1, 1), ("DEC C", 1, 1), ("LD C,u8", 2, 2), ("", 0, 0),
+    ("STOP", 2, 1), ("LD DE,u16", 3, 3),    ("LD (DE), A", 1, 2),   ("INC DE", 1, 2), ("INC D", 1, 1),      ("DEC D", 1, 1),    ("LD D,u8", 2, 2),      ("RLA", 1, 1),  ("JR i8", 2, 3),        ("ADD HL,DE", 1, 2), ("LD A,(DE)", 1, 2),   ("DEC DE", 1, 2), ("INC E", 1, 1), ("DEC E", 1, 1), ("LD E,u8", 2, 2), ("", 0, 0),
+    ("", 0, 0),     ("LD HL,16", 3, 3),     ("LD (HL++), A", 1, 2), ("INC HL", 1, 2), ("INC H", 1, 1),      ("DEC H", 1, 1),    ("LD H,u8", 2, 2),      ("DAA", 1, 1),  ("JR Z,i8", 2, 2),      ("ADD HL,HL", 1, 2), ("LD A,(HL++)", 1, 2), ("DEC HL", 1, 2), ("INC L", 1, 1), ("DEC L", 1, 1), ("LD L,u8", 2, 2), ("", 0, 0),
+    ("", 0, 0),     ("LD SP,16", 3, 3),     ("LD (HL--), A", 1, 2), ("INC SP", 1, 2), ("INC (HL)", 1, 3),   ("DEC (HL)", 1, 3), ("LD (HL),u8", 2, 3),   ("SCF", 1, 1),  ("JR C,i8", 2, 2),      ("ADD HL,SP", 1, 2), ("LD A,(HL--)", 1, 2), ("DEC SP", 1, 2), ("INC A", 1, 1), ("DEC A", 1, 1), ("LD A,u8", 2, 2), ("", 0, 0),
+    ("", 0, 0), ("", 0, 0), ("", 0, 0), ("", 0, 0), ("", 0, 0), ("", 0, 0), ("", 0, 0), ("", 0, 0), ("", 0, 0), ("", 0, 0), ("", 0, 0), ("", 0, 0), ("", 0, 0), ("", 0, 0), ("", 0, 0), ("", 0, 0),
+    ("", 0, 0), ("", 0, 0), ("", 0, 0), ("", 0, 0), ("", 0, 0), ("", 0, 0), ("", 0, 0), ("", 0, 0), ("", 0, 0), ("", 0, 0), ("", 0, 0), ("", 0, 0), ("", 0, 0), ("", 0, 0), ("", 0, 0), ("", 0, 0),
+    ("", 0, 0), ("", 0, 0), ("", 0, 0), ("", 0, 0), ("", 0, 0), ("", 0, 0), ("", 0, 0), ("", 0, 0), ("", 0, 0), ("", 0, 0), ("", 0, 0), ("", 0, 0), ("", 0, 0), ("", 0, 0), ("", 0, 0), ("", 0, 0),
+    ("", 0, 0), ("", 0, 0), ("", 0, 0), ("", 0, 0), ("", 0, 0), ("", 0, 0), ("", 0, 0), ("", 0, 0), ("", 0, 0), ("", 0, 0), ("", 0, 0), ("", 0, 0), ("", 0, 0), ("", 0, 0), ("", 0, 0), ("", 0, 0),
+    ("", 0, 0), ("", 0, 0), ("", 0, 0), ("", 0, 0), ("", 0, 0), ("", 0, 0), ("", 0, 0), ("", 0, 0), ("", 0, 0), ("", 0, 0), ("", 0, 0), ("", 0, 0), ("", 0, 0), ("", 0, 0), ("", 0, 0), ("", 0, 0),
+    ("", 0, 0), ("", 0, 0), ("", 0, 0), ("", 0, 0), ("", 0, 0), ("", 0, 0), ("", 0, 0), ("", 0, 0), ("", 0, 0), ("", 0, 0), ("", 0, 0), ("", 0, 0), ("", 0, 0), ("", 0, 0), ("", 0, 0), ("", 0, 0),
+    ("", 0, 0), ("", 0, 0), ("", 0, 0), ("", 0, 0), ("", 0, 0), ("", 0, 0), ("", 0, 0), ("", 0, 0), ("", 0, 0), ("", 0, 0), ("", 0, 0), ("", 0, 0), ("", 0, 0), ("", 0, 0), ("", 0, 0), ("", 0, 0),
+    ("", 0, 0), ("", 0, 0), ("", 0, 0), ("", 0, 0), ("", 0, 0), ("", 0, 0), ("", 0, 0), ("", 0, 0), ("", 0, 0), ("", 0, 0), ("", 0, 0), ("", 0, 0), ("", 0, 0), ("", 0, 0), ("", 0, 0), ("", 0, 0),
+    ("", 0, 0), ("", 0, 0), ("", 0, 0), ("", 0, 0), ("", 0, 0), ("", 0, 0), ("", 0, 0), ("", 0, 0), ("", 0, 0), ("", 0, 0), ("", 0, 0), ("", 0, 0), ("", 0, 0), ("", 0, 0), ("", 0, 0), ("", 0, 0),
+    ("", 0, 0), ("", 0, 0), ("", 0, 0), ("", 0, 0), ("", 0, 0), ("", 0, 0), ("", 0, 0), ("", 0, 0), ("", 0, 0), ("", 0, 0), ("", 0, 0), ("", 0, 0), ("", 0, 0), ("", 0, 0), ("", 0, 0), ("", 0, 0),
+    ("", 0, 0), ("", 0, 0), ("", 0, 0), ("", 0, 0), ("", 0, 0), ("", 0, 0), ("", 0, 0), ("", 0, 0), ("", 0, 0), ("", 0, 0), ("", 0, 0), ("", 0, 0), ("", 0, 0), ("", 0, 0), ("", 0, 0), ("", 0, 0),
+    ("", 0, 0), ("", 0, 0), ("", 0, 0), ("", 0, 0), ("", 0, 0), ("", 0, 0), ("", 0, 0), ("", 0, 0), ("", 0, 0), ("", 0, 0), ("", 0, 0), ("", 0, 0), ("", 0, 0), ("", 0, 0), ("", 0, 0), ("", 0, 0),
 ];
+
 
 const PREFIXED_INSTRUCTION_TABLE: [(&str, u8, u8); 0xFF] = [
     ("RLC B", 0, 0), ("RLC C", 0, 0), ("RLC D", 0, 0), ("RLC E", 0, 0), ("RLC H", 0, 0), ("RLC L", 0, 0), ("", 0, 0), ("", 0, 0), ("", 0, 0), ("", 0, 0), ("", 0, 0), ("", 0, 0), ("", 0, 0), ("", 0, 0), ("", 0, 0), ("", 0, 0), ("", 0, 0),
@@ -893,7 +1087,9 @@ const PREFIXED_INSTRUCTION_TABLE: [(&str, u8, u8); 0xFF] = [
     ("RES 4,B", 0, 0), ("RES 4,C", 0, 0), ("RES 4,D", 0, 0), ("RES 4,E", 0, 0), ("RES 4,H", 0, 0), ("RES 4,L", 0, 0), ("", 0, 0), ("", 0, 0), ("", 0, 0), ("", 0, 0), ("", 0, 0), ("", 0, 0), ("", 0, 0), ("", 0, 0), ("", 0, 0), ("", 0, 0), ("", 0, 0),
     ("RES 6,B", 0, 0), ("RES 6,C", 0, 0), ("RES 6,D", 0, 0), ("RES 6,E", 0, 0), ("RES 6,H", 0, 0), ("RES 6,L", 0, 0), ("", 0, 0), ("", 0, 0), ("", 0, 0), ("", 0, 0), ("", 0, 0), ("", 0, 0), ("", 0, 0), ("", 0, 0), ("", 0, 0), ("", 0, 0), ("", 0, 0),
     ("SET 0,B", 0, 0), ("SET 0,C", 0, 0), ("SET 0,D", 0, 0), ("SET 0,E", 0, 0), ("SET 0,H", 0, 0), ("SET 0,L", 0, 0), ("", 0, 0), ("", 0, 0), ("", 0, 0), ("", 0, 0), ("", 0, 0), ("", 0, 0), ("", 0, 0), ("", 0, 0), ("", 0, 0), ("", 0, 0), ("", 0, 0),
-    ("SET 2,B", 0, 0), ("", 0, 0), ("", 0, 0), ("", 0, 0), ("", 0, 0), ("", 0, 0), ("", 0, 0), ("", 0, 0), ("", 0, 0), ("", 0, 0), ("", 0, 0), ("", 0, 0), ("", 0, 0), ("", 0, 0), ("", 0, 0), ("", 0, 0), ("", 0, 0),
-    ("", 0, 0), ("", 0, 0), ("", 0, 0), ("", 0, 0), ("", 0, 0), ("", 0, 0), ("", 0, 0), ("", 0, 0), ("", 0, 0), ("", 0, 0), ("", 0, 0), ("", 0, 0), ("", 0, 0), ("", 0, 0), ("", 0, 0), ("", 0, 0), ("", 0, 0)
+    ("SET 2,B", 0, 0), ("SET 2,C", 0, 0), ("SET 2,D", 0, 0), ("SET 2,E", 0, 0), ("SET 2,H", 0, 0), ("SET 2,L", 0, 0), ("", 0, 0), ("", 0, 0), ("", 0, 0), ("", 0, 0), ("", 0, 0), ("", 0, 0), ("", 0, 0), ("", 0, 0), ("", 0, 0), ("", 0, 0), ("", 0, 0),
+    ("SET 4,B", 0, 0), ("SET 4,C", 0, 0), ("SET 4,D", 0, 0), ("SET 4,E", 0, 0), ("SET 4,H", 0, 0), ("SET 4,L", 0, 0), ("", 0, 0), ("", 0, 0), ("", 0, 0), ("", 0, 0), ("", 0, 0), ("", 0, 0), ("", 0, 0), ("", 0, 0), ("", 0, 0), ("", 0, 0), ("", 0, 0),
+    ("SET 6,B", 0, 0), ("SET 6,C", 0, 0), ("SET 6,D", 0, 0), ("SET 6,E", 0, 0), ("SET 6,H", 0, 0), ("SET 6,L", 0, 0), ("", 0, 0), ("", 0, 0), ("", 0, 0), ("", 0, 0), ("", 0, 0), ("", 0, 0), ("", 0, 0), ("", 0, 0), ("", 0, 0), ("", 0, 0), ("", 0, 0)
+
 ];
 
