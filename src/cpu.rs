@@ -945,6 +945,7 @@ impl Z80 {
                     1 => {
                         self.a = self.ADD(self.a, self.fetched);
                     },
+                    _ => {panic!("cycles left incorrect")}
                 }
             },
             0x87 => { // ADD A,A
@@ -974,6 +975,7 @@ impl Z80 {
                     1 => {
                         self.a = self.ADC(self.a, self.fetched);
                     },
+                    _ => {panic!("cycles left incorrect")}
                 }
             },
             0x8F => { // ADC A,A
@@ -1004,6 +1006,7 @@ impl Z80 {
                     1 => {
                         self.a = self.SUB(self.a, self.fetched);
                     },
+                    _ => {panic!("cycles left incorrect")}
                 }
             },
             0x97 => { // SUB A,A
@@ -1033,6 +1036,7 @@ impl Z80 {
                     1 => {
                         self.a = self.SBC(self.a, self.fetched);
                     },
+                    _ => {panic!("cycles left incorrect")}
                 }
             },
             0x9F => { // SBC A,A
