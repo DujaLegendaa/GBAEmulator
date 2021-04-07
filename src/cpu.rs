@@ -21,7 +21,9 @@ pub struct Z80{
     pub prefixedInstruction: bool,
     cbFlag: bool,
     branchTaken: bool,
-    justBooted: bool
+    justBooted: bool,
+    halted: bool,
+    masterInterrupt: bool
 }
 
 pub enum Flags {
@@ -61,32 +63,26 @@ impl Z80{
             cbFlag: false,
             branchTaken: false,
             justBooted: true,
+            halted: false,
+            masterInterrupt: false,
         }
     }
 
 
     fn getAF(&self) -> u16{
-        let mut af: u16;
-        af = ((self.a as u16)<<8) | (self.f as u16);
-        af
+        ((self.a as u16)<<8) | (self.f as u16)
     }
 
     fn getBC(&self) -> u16{
-        let mut bc: u16;
-        bc = ((self.b as u16)<<8) | (self.c as u16);
-        bc
+        ((self.b as u16)<<8) | (self.c as u16)
     }
 
     fn getDE(&self) -> u16{
-        let mut de: u16;
-        de = ((self.d as u16)<<8) | (self.e as u16);
-        de
+        ((self.d as u16)<<8) | (self.e as u16)
     }
 
     fn getHL(&self) -> u16{
-        let mut hl: u16;
-        hl = ((self.h as u16)<<8) | (self.l as u16);
-        hl
+        ((self.h as u16)<<8) | (self.l as u16)
     }
 
 
@@ -233,6 +229,26 @@ impl Z80 {
             3 => {},
             2 => {},
             1 => { self.pc = (self.POP8() as u16) << 8; self.pc |= self.POP8() as u16},
+            _ => {panic!("cycles left incorrect")}
+        }
+    }
+
+    fn RETI(&mut self) {
+        match self.cyclesLeft {
+            4 => {},
+            3 => {},
+            2 => {self.pc = (self.POP8() as u16) << 8; self.pc |= self.POP8() as u16},
+            1 => {self.masterInterrupt = true;},
+            _ => {panic!("cycles left incorrect")}
+        }
+    }
+
+    fn RET(&mut self) {
+        match self.cyclesLeft {
+            4 => {},
+            3 => {},
+            2 => {},
+            1 => {self.pc = (self.POP8() as u16) << 8; self.pc |= self.POP8() as u16},
             _ => {panic!("cycles left incorrect")}
         }
     }
@@ -572,7 +588,7 @@ impl Z80 {
             0x27 => { // DAA NOT IMPLEMENTED
                 todo!("Implement DAA");
             },
-            0x28 => { // JR Z,i8 NOT IMPLEMENTED
+            0x28 => { // JR Z,i8 
                 self.JR_CONDITIONAL(self.getFlag(Flags::Zero))
             },
             0x29 => { // ADD HL,HL *nisam siguran*
@@ -966,8 +982,10 @@ impl Z80 {
                     _ => {panic!("cycles left incorrect")}
                 }
             },
-            //0x76 => { // HALT}
-            0x77 => {
+            0x76 => { // HALT
+                self.halted = true;
+            }
+            0x77 => { // LD (HL),A
                 match self.cyclesLeft {
                     2 => {}
                     1 => {self.writeByte(self.getHL(), self.a);}
@@ -1283,7 +1301,7 @@ impl Z80 {
                 self.RET_CONDITIAL(self.getFlag(Flags::Zero));
             },
             0xC9 => { // RET
-                self.RET_CONDITIAL(true);
+                self.RET();
             },
             0xCA => { // JP Z,u16
                 self.JP_CONDITIAL(self.getFlag(Flags::Zero), self.readBytes(self.pc + 1));
@@ -1347,8 +1365,8 @@ impl Z80 {
             0xD8 => { // RET C
                 self.RET_CONDITIAL(self.getFlag(Flags::Carry));
             },
-            0xD9 => { // RETI NOT IMPLEMENTED SET INTERRUPTS
-                self.RET_CONDITIAL(true);
+            0xD9 => { // RETI
+                self.RETI();
             },
             0xDA => { // JP C,u16
                 self.JP_CONDITIAL(self.getFlag(Flags::Carry), self.readBytes(self.pc + 1));
@@ -1465,8 +1483,8 @@ impl Z80 {
                     _ => {panic!("cycles left incorrect")}
                 }
             },
-            0xF3 => { // DI NOT IMPLEMENTED
-                todo!("Not implmeneted DI")
+            0xF3 => { // DI 
+                self.masterInterrupt = false;
             },
             0xF5 => { // PUSH AF
                 match self.cyclesLeft {
@@ -1514,7 +1532,7 @@ impl Z80 {
                 }
             },
             0xFB => { // EI
-                todo!("EI NOT IMPLEMENTED")
+                self.masterInterrupt = true;
             },
             0xFE => { // CP A,u8
                 match self.cyclesLeft {
@@ -1558,6 +1576,9 @@ impl Z80 {
     }
 
     pub fn clock(&mut self) {
+        if self.halted {
+            return;
+        }
         if self.justBooted {
             self.currentOpcode = self.readByte(self.pc);
             let (_, _, cycles) = self.getInstructionInfo(self.currentOpcode);
