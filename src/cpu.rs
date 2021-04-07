@@ -395,6 +395,14 @@ impl Z80 {
         self.setFlag(true, Flags::HCarry);
     }
 
+    fn RES(&self, op1: u8, n: u8) -> u8 {
+        bit::clr(op1, n as usize)
+    }
+
+    fn SET(&self, op1: u8, n: u8) -> u8 {
+        bit::set(op1, n as usize)
+    }
+
     fn unprefixedOpcodes(&mut self, opcode: u8){
         match opcode {
             0x00 => { // NOP
@@ -1749,24 +1757,823 @@ impl Z80 {
                 self.a = self.RR(self.a);
             },
 
-            0x20 => {},
-            0x21 => {},
-            0x22 => {},
-            0x23 => {},
-            0x24 => {},
-            0x25 => {},
-            0x26 => {},
-            0x27 => {},
-            0x28 => {},
-            0x29 => {},
-            0x2A => {},
-            0x2B => {},
-            0x2C => {},
-            0x2D => {},
-            0x2E => {},
-            0x2F => {},
+            0x20 => { // SLA B
+                self.b = self.SLA(self.b);
+            },
+            0x21 => { // SLA C
+                self.c = self.SLA(self.c);
+            },
+            0x22 => { // SLA D
+                self.d = self.SLA(self.d);
+            },
+            0x23 => { // SLA E
+                self.e = self.SLA(self.e);
+            },
+            0x24 => { // SLA H
+                self.h = self.SLA(self.h);
+            },
+            0x25 => { // SLA L
+                self.l = self.SLA(self.l);
+            },
+            0x26 => { // SLA (HL)
+                match self.cyclesLeft {
+                    3 => {},
+                    2 => {self.fetched = self.SLA(self.readByte(self.getHL()))},
+                    1 => {self.writeByte(self.getHL(), self.fetched)},
+                    _ => {panic!("cycles left incorrect")}
+                }
+            },
+            0x27 => { // SLA A
+                self.a = self.SLA(self.a);
+            },
+            0x28 => { // SRA B
+                self.b = self.SRA(self.b);
+            },
+            0x29 => { // SRA C
+                self.c = self.SRA(self.c);
+            },
+            0x2A => { // SRA D
+                self.d = self.SRA(self.d);
+            },
+            0x2B => { // SRA E
+                self.e = self.SRA(self.e);
+            },
+            0x2C => { // SRA H
+                self.h = self.SRA(self.h);
+            },
+            0x2D => { // SRA L
+                self.l = self.SRA(self.l);
+            },
+            0x2E => { // SRA (HL)
+                match self.cyclesLeft {
+                    3 => {},
+                    2 => {self.fetched = self.SRA(self.readByte(self.getHL()))},
+                    1 => {self.writeByte(self.getHL(), self.fetched)},
+                    _ => {panic!("cycles left incorrect")}
+                }
+            },
+            0x2F => { // SRA A
+                self.a = self.SRA(self.a);
+            },
 
-            _ => ()//panic!("Prefixed opcodes not implemented")
+            0x30 => { // SWAP B
+                self.b = self.SWAP(self.b);
+            },
+            0x31 => { // SWAP C
+                self.c = self.SWAP(self.c);
+            },
+            0x32 => { // SWAP D
+                self.d = self.SWAP(self.d);
+            },
+            0x33 => { // SWAP E
+                self.e = self.SWAP(self.e);
+            },
+            0x34 => { // SWAP H
+                self.h = self.SWAP(self.h);
+            },
+            0x35 => { // SWAP L
+                self.l = self.SWAP(self.l);
+            },
+            0x36 => { // SWAP (HL)
+                match self.cyclesLeft {
+                    3 => {},
+                    2 => {self.fetched = self.SWAP(self.readByte(self.getHL()))},
+                    1 => {self.writeByte(self.getHL(), self.fetched)},
+                    _ => {panic!("cycles left incorrect")}
+                }
+            },
+            0x37 => { // SWAP A
+                self.a = self.SWAP(self.a);
+            },
+            0x38 => { // SRL B
+                self.b = self.SRL(self.b);
+            },
+            0x39 => { // SRL C
+                self.c = self.SRL(self.c);
+            },
+            0x3A => { // SRL D
+                self.d = self.SRL(self.d);
+            },
+            0x3B => { // SRL E
+                self.e = self.SRL(self.e);
+            },
+            0x3C => { // SRL H
+                self.h = self.SRL(self.h);
+            },
+            0x3D => { // SRL L
+                self.l = self.SRL(self.l);
+            },
+            0x3E => { // SRL (HL)
+                match self.cyclesLeft {
+                    3 => {},
+                    2 => {self.fetched = self.SRL(self.readByte(self.getHL()))},
+                    1 => {self.writeByte(self.getHL(), self.fetched)},
+                    _ => {panic!("cycles left incorrect")}
+                }
+            },
+            0x3F => { // SRL A
+                self.a = self.SRL(self.a);
+            },
+
+            0x40 => { // BIT B,0
+                self.BIT(self.b, 0);
+            },
+            0x41 => { // BIT C,0
+                self.BIT(self.c, 0);
+            },
+            0x42 => { // BIT D,0
+                self.BIT(self.d, 0);
+            },
+            0x43 => { // BIT E,0
+                self.BIT(self.e, 0);
+            },
+            0x44 => { // BIT H,0
+                self.BIT(self.h, 0);
+            },
+            0x45 => { // BIT L,0
+                self.BIT(self.l, 0);
+            },
+            0x46 => { // BIT (HL),0
+                match self.cyclesLeft {
+                    2 => {self.fetched = self.readByte(self.getHL())},
+                    1 => {self.BIT(self.fetched, 0)},
+                    _ => {panic!("cycles left incorrect")}
+                }
+            },
+            0x47 => { // BIT A,0
+                self.BIT(self.a, 0);
+            },
+            0x48 => { // BIT B,1
+                self.BIT(self.b, 1);
+            },
+            0x49 => { // BIT C,1
+                self.BIT(self.c, 1);
+            },
+            0x4A => { // BIT D,1
+                self.BIT(self.d, 1);
+            },
+            0x4B => { // BIT E,1
+                self.BIT(self.e, 1);
+            },
+            0x4C => { // BIT H,1
+                self.BIT(self.h, 1);
+            },
+            0x4D => { // BIT L,1
+                self.BIT(self.l, 1);
+            },
+            0x4E => { // BIT (HL),1
+                match self.cyclesLeft {
+                    2 => {self.fetched = self.readByte(self.getHL())},
+                    1 => {self.BIT(self.fetched, 1)},
+                    _ => {panic!("cycles left incorrect")}
+                }
+            },
+            0x4F => { // BIT A,1
+                self.BIT(self.a, 1);
+            },
+
+            0x50 => { // BIT B,2
+                self.BIT(self.b, 2);
+            },
+            0x51 => { // BIT C,2
+                self.BIT(self.c, 2);
+            },
+            0x52 => { // BIT D,2
+                self.BIT(self.d, 2);
+            },
+            0x53 => { // BIT E,2
+                self.BIT(self.e, 2);
+            },
+            0x54 => { // BIT H,2
+                self.BIT(self.h, 2);
+            },
+            0x55 => { // BIT L,2
+                self.BIT(self.l, 2);
+            },
+            0x56 => { // BIT (HL),2
+                match self.cyclesLeft {
+                    2 => {self.fetched = self.readByte(self.getHL())},
+                    1 => {self.BIT(self.fetched, 2)},
+                    _ => {panic!("cycles left incorrect")}
+                }
+            },
+            0x57 => { // BIT A,2
+                self.BIT(self.a, 2);
+            },
+            0x58 => { // BIT B,3
+                self.BIT(self.b, 3);
+            },
+            0x59 => { // BIT C,3
+                self.BIT(self.c, 3);
+            },
+            0x5A => { // BIT D,3
+                self.BIT(self.d, 3);
+            },
+            0x5B => { // BIT E,3
+                self.BIT(self.e, 3);
+            },
+            0x5C => { // BIT H,3
+                self.BIT(self.h, 3);
+            },
+            0x5D => { // BIT L,3
+                self.BIT(self.l, 3);
+            },
+            0x5E => { // BIT (HL),3
+                match self.cyclesLeft {
+                    2 => {self.fetched = self.readByte(self.getHL())},
+                    1 => {self.BIT(self.fetched, 3)},
+                    _ => {panic!("cycles left incorrect")}
+                }
+            },
+            0x5F => { // BIT A,3
+                self.BIT(self.a, 3);
+            },
+
+            0x60 => { // BIT B,4
+                self.BIT(self.b, 4);
+            },
+            0x61 => { // BIT C,4
+                self.BIT(self.c, 4);
+            },
+            0x62 => { // BIT D,4
+                self.BIT(self.d, 4);
+            },
+            0x63 => { // BIT E,4
+                self.BIT(self.e, 4);
+            },
+            0x64 => { // BIT H,4
+                self.BIT(self.h, 4);
+            },
+            0x65 => { // BIT L,4
+                self.BIT(self.l, 4);
+            },
+            0x66 => { // BIT (HL),4
+                match self.cyclesLeft {
+                    2 => {self.fetched = self.readByte(self.getHL())},
+                    1 => {self.BIT(self.fetched, 4)},
+                    _ => {panic!("cycles left incorrect")}
+                }
+            },
+            0x67 => { // BIT A,4
+                self.BIT(self.a, 4);
+            },
+            0x68 => { // BIT B,5
+                self.BIT(self.b, 5);
+            },
+            0x69 => { // BIT C,5
+                self.BIT(self.c, 5);
+            },
+            0x6A => { // BIT D,5
+                self.BIT(self.d, 5);
+            },
+            0x6B => { // BIT E,5
+                self.BIT(self.e, 5);
+            },
+            0x6C => { // BIT H,5
+                self.BIT(self.h, 5);
+            },
+            0x6D => { // BIT L,5
+                self.BIT(self.l, 5);
+            },
+            0x6E => { // BIT (HL),5
+                match self.cyclesLeft {
+                    2 => {self.fetched = self.readByte(self.getHL())},
+                    1 => {self.BIT(self.fetched, 5)},
+                    _ => {panic!("cycles left incorrect")}
+                }
+            },
+            0x6F => { // BIT A,5
+                self.BIT(self.a, 5);
+            },
+
+            0x70 => { // BIT B,6
+                self.BIT(self.b, 6);
+            },
+            0x71 => { // BIT C,6
+                self.BIT(self.c, 6);
+            },
+            0x72 => { // BIT D,6
+                self.BIT(self.d, 6);
+            },
+            0x73 => { // BIT E,6
+                self.BIT(self.e, 6);
+            },
+            0x74 => { // BIT H,6
+                self.BIT(self.h, 6);
+            },
+            0x75 => { // BIT L,6
+                self.BIT(self.l, 6);
+            },
+            0x76 => { // BIT (HL),6
+                match self.cyclesLeft {
+                    2 => {self.fetched = self.readByte(self.getHL())},
+                    1 => {self.BIT(self.fetched, 6)},
+                    _ => {panic!("cycles left incorrect")}
+                }
+            },
+            0x77 => { // BIT A,6
+                self.BIT(self.a, 6);
+            },
+            0x78 => { // BIT B,7
+                self.BIT(self.b, 7);
+            },
+            0x79 => { // BIT C,7
+                self.BIT(self.c, 7);
+            },
+            0x7A => { // BIT D,7
+                self.BIT(self.d, 7);
+            },
+            0x7B => { // BIT E,7
+                self.BIT(self.e, 7);
+            },
+            0x7C => { // BIT H,7
+                self.BIT(self.h, 7);
+            },
+            0x7D => { // BIT L,7
+                self.BIT(self.l, 7);
+            },
+            0x7E => { // BIT (HL),7
+                match self.cyclesLeft {
+                    2 => {self.fetched = self.readByte(self.getHL())},
+                    1 => {self.BIT(self.fetched, 7)},
+                    _ => {panic!("cycles left incorrect")}
+                }
+            },
+            0x7F => { // BIT A,7
+                self.BIT(self.a, 7);
+            },
+
+            0x80 => { // RES B,0
+                self.b = self.RES(self.b, 0);
+            },
+            0x81 => { // RES C,0
+                self.c = self.RES(self.c, 0);
+            },
+            0x82 => { // RES D,0
+                self.d = self.RES(self.d, 0);
+            },
+            0x83 => { // RES E,0
+                self.e = self.RES(self.e, 0);
+            },
+            0x84 => { // RES H,0
+                self.h = self.RES(self.h, 0);
+            },
+            0x85 => { // RES L,0
+                self.l = self.RES(self.l, 0);
+            },
+            0x86 => { // RES (HL),0
+                match self.cyclesLeft {
+                    3 => {},
+                    2 => {self.fetched = self.RES(self.readByte(self.getHL()), 0)},
+                    1 => {self.writeByte(self.getHL(), self.fetched)},
+                    _ => {panic!("cycles left incorrect")}
+                }
+            },
+            0x87 => { // RES A,0
+                self.a = self.RES(self.a, 0);
+            },
+            0x88 => { // RES B,1
+                self.b = self.RES(self.b, 1);
+            },
+            0x89 => { // RES C,1
+                self.c = self.RES(self.c, 1);
+            },
+            0x8A => { // RES D,1
+                self.d = self.RES(self.d, 1);
+            },
+            0x8B => { // RES E,1
+                self.e = self.RES(self.e, 1);
+            },
+            0x8C => { // RES H,1
+                self.h = self.RES(self.h, 1);
+            },
+            0x8D => { // RES L,1
+                self.l = self.RES(self.l, 1);
+            },
+            0x8E => { // RES (HL),1
+                match self.cyclesLeft {
+                    3 => {},
+                    2 => {self.fetched = self.RES(self.readByte(self.getHL()), 1)},
+                    1 => {self.writeByte(self.getHL(), self.fetched)},
+                    _ => {panic!("cycles left incorrect")}
+                }
+            },
+            0x8F => { // RES A,1
+                self.a = self.RES(self.a, 1);
+            },
+
+            0x90 => { // RES B,2
+                self.b = self.RES(self.b, 2);
+            },
+            0x91 => { // RES C,2
+                self.c = self.RES(self.c, 2);
+            },
+            0x92 => { // RES D,2
+                self.d = self.RES(self.d, 2);
+            },
+            0x93 => { // RES E,2
+                self.e = self.RES(self.e, 2);
+            },
+            0x94 => { // RES H,2
+                self.h = self.RES(self.h, 2);
+            },
+            0x95 => { // RES L,2
+                self.l = self.RES(self.l, 2);
+            },
+            0x96 => { // RES (HL),2
+                match self.cyclesLeft {
+                    3 => {},
+                    2 => {self.fetched = self.RES(self.readByte(self.getHL()), 2)},
+                    1 => {self.writeByte(self.getHL(), self.fetched)},
+                    _ => {panic!("cycles left incorrect")}
+                }
+            },
+            0x97 => { // RES A,2
+                self.a = self.RES(self.a, 2);
+            },
+            0x98 => { // RES B,3
+                self.b = self.RES(self.b, 3);
+            },
+            0x99 => { // RES C,3
+                self.c = self.RES(self.c, 3);
+            },
+            0x9A => { // RES D,3
+                self.d = self.RES(self.d, 3);
+            },
+            0x9B => { // RES E,3
+                self.e = self.RES(self.e, 3);
+            },
+            0x9C => { // RES H,3
+                self.h = self.RES(self.h, 3);
+            },
+            0x9D => { // RES L,3
+                self.l = self.RES(self.l, 3);
+            },
+            0x9E => { // RES (HL),3
+                match self.cyclesLeft {
+                    3 => {},
+                    2 => {self.fetched = self.RES(self.readByte(self.getHL()), 3)},
+                    1 => {self.writeByte(self.getHL(), self.fetched)},
+                    _ => {panic!("cycles left incorrect")}
+                }
+            },
+            0x9F => { // RES A,3
+                self.a = self.RES(self.a, 3);
+            },
+
+            0xA0 => { // RES B,4
+                self.b = self.RES(self.b, 4);
+            },
+            0xA1 => { // RES C,4
+                self.c = self.RES(self.c, 4);
+            },
+            0xA2 => { // RES D,4
+                self.d = self.RES(self.d, 4);
+            },
+            0xA3 => { // RES E,4
+                self.e = self.RES(self.e, 4);
+            },
+            0xA4 => { // RES H,4
+                self.h = self.RES(self.h, 4);
+            },
+            0xA5 => { // RES L,4
+                self.l = self.RES(self.l, 4);
+            },
+            0xA6 => { // RES (HL),4
+                match self.cyclesLeft {
+                    3 => {},
+                    2 => {self.fetched = self.RES(self.readByte(self.getHL()), 4)},
+                    1 => {self.writeByte(self.getHL(), self.fetched)},
+                    _ => {panic!("cycles left incorrect")}
+                }
+            },
+            0xA7 => { // RES A,4
+                self.a = self.RES(self.a, 4);
+            },
+            0xA8 => { // RES B,5
+                self.b = self.RES(self.b, 5);
+            },
+            0xA9 => { // RES C,5
+                self.c = self.RES(self.c, 5);
+            },
+            0xAA => { // RES D,5
+                self.d = self.RES(self.d, 5);
+            },
+            0xAB => { // RES E,5
+                self.e = self.RES(self.e, 5);
+            },
+            0xAC => { // RES H,5
+                self.h = self.RES(self.h, 5);
+            },
+            0xAD => { // RES L,5
+                self.l = self.RES(self.l, 5);
+            },
+            0xAE => { // RES (HL),5
+                match self.cyclesLeft {
+                    3 => {},
+                    2 => {self.fetched = self.RES(self.readByte(self.getHL()), 5)},
+                    1 => {self.writeByte(self.getHL(), self.fetched)},
+                    _ => {panic!("cycles left incorrect")}
+                }
+            },
+            0xAF => { // RES A,5
+                self.a = self.RES(self.a, 5);
+            },
+
+            0xB0 => { // RES B,6
+                self.b = self.RES(self.b, 6);
+            },
+            0xB1 => { // RES C,6
+                self.c = self.RES(self.c, 6);
+            },
+            0xB2 => { // RES D,6
+                self.d = self.RES(self.d, 6);
+            },
+            0xB3 => { // RES E,6
+                self.e = self.RES(self.e, 6);
+            },
+            0xB4 => { // RES H,6
+                self.h = self.RES(self.h, 6);
+            },
+            0xB5 => { // RES L,6
+                self.l = self.RES(self.l, 6);
+            },
+            0xB6 => { // RES (HL),6
+                match self.cyclesLeft {
+                    3 => {},
+                    2 => {self.fetched = self.RES(self.readByte(self.getHL()), 6)},
+                    1 => {self.writeByte(self.getHL(), self.fetched)},
+                    _ => {panic!("cycles left incorrect")}
+                }
+            },
+            0xB7 => { // RES A,6
+                self.a = self.RES(self.a, 6);
+            },
+            0xB8 => { // RES B,7
+                self.b = self.RES(self.b, 7);
+            },
+            0xB9 => { // RES C,7
+                self.c = self.RES(self.c, 7);
+            },
+            0xBA => { // RES D,7
+                self.d = self.RES(self.d, 7);
+            },
+            0xBB => { // RES E,7
+                self.e = self.RES(self.e, 7);
+            },
+            0xBC => { // RES H,7
+                self.h = self.RES(self.h, 7);
+            },
+            0xBD => { // RES L,7
+                self.l = self.RES(self.l, 7);
+            },
+            0xBE => { // RES (HL),7
+                match self.cyclesLeft {
+                    3 => {},
+                    2 => {self.fetched = self.RES(self.readByte(self.getHL()), 7)},
+                    1 => {self.writeByte(self.getHL(), self.fetched)},
+                    _ => {panic!("cycles left incorrect")}
+                }
+            },
+            0xBF => { // RES A,7
+                self.a = self.RES(self.a, 7);
+            },
+
+            0xC0 => { // SET B,0
+                self.b = self.SET(self.b, 0);
+            },
+            0xC1 => { // SET C,0
+                self.c = self.SET(self.c, 0);
+            },
+            0xC2 => { // SET D,0
+                self.d = self.SET(self.d, 0);
+            },
+            0xC3 => { // SET E,0
+                self.e = self.SET(self.e, 0);
+            },
+            0xC4 => { // SET H,0
+                self.h = self.SET(self.h, 0);
+            },
+            0xC5 => { // RESSET L,0
+                self.l = self.SET(self.l, 0);
+            },
+            0xC6 => { // SET (HL),0
+                match self.cyclesLeft {
+                    3 => {},
+                    2 => {self.fetched = self.SET(self.readByte(self.getHL()), 0)},
+                    1 => {self.writeByte(self.getHL(), self.fetched)},
+                    _ => {panic!("cycles left incorrect")}
+                }
+            },
+            0xC7 => { // SET A,0
+                self.a = self.SET(self.a, 0);
+            },
+            0xC8 => { // SET B,1
+                self.b = self.SET(self.b, 1);
+            },
+            0xC9 => { // SET C,1
+                self.c = self.SET(self.c, 1);
+            },
+            0xCA => { // SET D,1
+                self.d = self.SET(self.d, 1);
+            },
+            0xCB => { // SET E,1
+                self.e = self.SET(self.e, 1);
+            },
+            0xCC => { // SET H,1
+                self.h = self.SET(self.h, 1);
+            },
+            0xCD => { // SET L,1
+                self.l = self.SET(self.l, 1);
+            },
+            0xCE => { // SET (HL),1
+                match self.cyclesLeft {
+                    3 => {},
+                    2 => {self.fetched = self.SET(self.readByte(self.getHL()), 1)},
+                    1 => {self.writeByte(self.getHL(), self.fetched)},
+                    _ => {panic!("cycles left incorrect")}
+                }
+            },
+            0xCF => { // SET A,1
+                self.a = self.SET(self.a, 1);
+            },
+
+            0xD0 => { // SET B,2
+                self.b = self.SET(self.b, 2);
+            },
+            0xD1 => { // SET C,2
+                self.c = self.SET(self.c, 2);
+            },
+            0xD2 => { // SET D,2
+                self.d = self.SET(self.d, 2);
+            },
+            0xD3 => { // SET E,2
+                self.e = self.SET(self.e, 2);
+            },
+            0xD4 => { // SET H,2
+                self.h = self.SET(self.h, 2);
+            },
+            0xD5 => { // SET L,2
+                self.l = self.SET(self.l, 2);
+            },
+            0xD6 => { // SET (HL),2
+                match self.cyclesLeft {
+                    3 => {},
+                    2 => {self.fetched = self.SET(self.readByte(self.getHL()), 2)},
+                    1 => {self.writeByte(self.getHL(), self.fetched)},
+                    _ => {panic!("cycles left incorrect")}
+                }
+            },
+            0xD7 => { // SET A,2
+                self.a = self.SET(self.a, 2);
+            },
+            0xD8 => { // SET B,3
+                self.b = self.SET(self.b, 3);
+            },
+            0xD9 => { // SET C,3
+                self.c = self.SET(self.c, 3);
+            },
+            0xDA => { // SET D,3
+                self.d = self.SET(self.d, 3);
+            },
+            0xDB => { // SET E,3
+                self.e = self.SET(self.e, 3);
+            },
+            0xDC => { // SET H,3
+                self.h = self.SET(self.h, 3);
+            },
+            0xDD => { // SET L,3
+                self.l = self.SET(self.l, 3);
+            },
+            0xDE => { // SET (HL),3
+                match self.cyclesLeft {
+                    3 => {},
+                    2 => {self.fetched = self.SET(self.readByte(self.getHL()), 3)},
+                    1 => {self.writeByte(self.getHL(), self.fetched)},
+                    _ => {panic!("cycles left incorrect")}
+                }
+            },
+            0xDF => { // SET A,3
+                self.a = self.SET(self.a, 3);
+            },
+
+            0xE0 => { // SET B,4
+                self.b = self.SET(self.b, 4);
+            },
+            0xE1 => { // SET C,4
+                self.c = self.SET(self.c, 4);
+            },
+            0xE2 => { // SET D,4
+                self.d = self.SET(self.d, 4);
+            },
+            0xE3 => { // SET E,4
+                self.e = self.SET(self.e, 4);
+            },
+            0xE4 => { // SET H,4
+                self.h = self.SET(self.h, 4);
+            },
+            0xE5 => { // SET L,4
+                self.l = self.SET(self.l, 4);
+            },
+            0xE6 => { // SET (HL),4
+                match self.cyclesLeft {
+                    3 => {},
+                    2 => {self.fetched = self.SET(self.readByte(self.getHL()), 4)},
+                    1 => {self.writeByte(self.getHL(), self.fetched)},
+                    _ => {panic!("cycles left incorrect")}
+                }
+            },
+            0xE7 => { // SET A,4
+                self.a = self.SET(self.a, 4);
+            },
+            0xE8 => { // SET B,5
+                self.b = self.SET(self.b, 5);
+            },
+            0xE9 => { // SET C,5
+                self.c = self.SET(self.c, 5);
+            },
+            0xEA => { // SET D,5
+                self.d = self.SET(self.d, 5);
+            },
+            0xEB => { // SET E,5
+                self.e = self.SET(self.e, 5);
+            },
+            0xEC => { // SET H,5
+                self.h = self.SET(self.h, 5);
+            },
+            0xED => { // SET L,5
+                self.l = self.SET(self.l, 5);
+            },
+            0xEE => { // SET (HL),5
+                match self.cyclesLeft {
+                    3 => {},
+                    2 => {self.fetched = self.SET(self.readByte(self.getHL()), 5)},
+                    1 => {self.writeByte(self.getHL(), self.fetched)},
+                    _ => {panic!("cycles left incorrect")}
+                }
+            },
+            0xEF => { // SET A,5
+                self.a = self.SET(self.a, 5);
+            },
+
+            0xF0 => { // SET B,6
+                self.b = self.SET(self.b, 6);
+            },
+            0xF1 => { // SET C,6
+                self.c = self.SET(self.c, 6);
+            },
+            0xF2 => { // SET D,6
+                self.d = self.SET(self.d, 6);
+            },
+            0xF3 => { // SET E,6
+                self.e = self.SET(self.e, 6);
+            },
+            0xF4 => { // SET H,6
+                self.h = self.SET(self.h, 6);
+            },
+            0xF5 => { // SET L,6
+                self.l = self.SET(self.l, 6);
+            },
+            0xF6 => { // SET (HL),6
+                match self.cyclesLeft {
+                    3 => {},
+                    2 => {self.fetched = self.SET(self.readByte(self.getHL()), 6)},
+                    1 => {self.writeByte(self.getHL(), self.fetched)},
+                    _ => {panic!("cycles left incorrect")}
+                }
+            },
+            0xF7 => { // SET A,6
+                self.a = self.SET(self.a, 6);
+            },
+            0xF8 => { // SET B,7
+                self.b = self.SET(self.b, 7);
+            },
+            0xF9 => { // SET C,7
+                self.c = self.SET(self.c, 7);
+            },
+            0xFA => { // SET D,7
+                self.d = self.SET(self.d, 7);
+            },
+            0xFB => { // SET E,7
+                self.e = self.SET(self.e, 7);
+            },
+            0xFC => { // SET H,7
+                self.h = self.SET(self.h, 7);
+            },
+            0xFD => { // SET L,7
+                self.l = self.SET(self.l, 7);
+            },
+            0xFE => { // RES (HL),7
+                match self.cyclesLeft {
+                    3 => {},
+                    2 => {self.fetched = self.SET(self.readByte(self.getHL()), 7)},
+                    1 => {self.writeByte(self.getHL(), self.fetched)},
+                    _ => {panic!("cycles left incorrect")}
+                }
+            },
+            0xFF => { // SET A,7
+                self.a = self.SET(self.a, 7);
+            },
         }
         if self.cyclesLeft == 0 {self.prefixedInstruction = false}
     }
