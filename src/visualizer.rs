@@ -113,14 +113,14 @@ pub fn renderFullDissassembly(c: &Z80, ramPage1: u16, ramPage2: u16, f: &Font, w
     registerText.set_fill_color(Color::WHITE);
     registerText.set_position((tArr[0].position().x, tArr[0].local_bounds().height + 20.0));
 
-
+    
     let mut codeText = Text::default();
     codeText.set_font(f);
     codeText.set_string(&showCode(c, c.pc, 30));
     codeText.set_character_size(CHAR_SIZE);
     codeText.set_fill_color(Color::WHITE);
     codeText.set_position((registerText.position().x, registerText.local_bounds().height + registerText.position().y + 20.0));
-
+    
     /*
     let mut registerBinaryText = Text::default();
     registerBinaryText.set_font(f);
