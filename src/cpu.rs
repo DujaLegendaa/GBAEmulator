@@ -298,6 +298,103 @@ impl Z80 {
         }
     }
 
+    fn RLC(&mut self, op1: u8) -> u8{
+        self.setFlag(bit::get(op1, 7), Flags::Carry);
+        let result = op1.rotate_left(1);
+        self.setZeroFlag(result);
+        self.setFlag(false, Flags::Sub);
+        self.setFlag(false, Flags::HCarry);
+        result
+    }
+
+    fn RRC(&mut self, op1: u8) -> u8 {
+        self.setFlag(bit::get(op1, 0), Flags::Carry);
+        let result = op1.rotate_right(1);
+        self.setZeroFlag(result);
+        self.setFlag(false, Flags::Sub);
+        self.setFlag(false, Flags::HCarry);
+        result
+    }
+
+    fn RL(&mut self, op1: u8) -> u8 {
+        let nCarry = bit::get(op1, 7);
+        let mut result = op1.rotate_left(1);
+        if self.getFlag(Flags::Carry) {
+            result = bit::set(op1, 0);
+        } else {
+            result = bit::clr(op1, 0);
+        }
+        self.setFlag(nCarry, Flags::Carry);
+        self.setZeroFlag(result);
+        self.setFlag(false, Flags::Sub);
+        self.setFlag(false, Flags::HCarry);
+        result
+    }
+
+    fn RR(&mut self, op1: u8) -> u8 {
+        let nCarry = bit::get(op1, 0);
+        let mut result = op1.rotate_right(1);
+        if self.getFlag(Flags::Carry) {
+            result = bit::set(op1, 7);
+        } else {
+            result = bit::clr(op1, 7);
+        }
+        self.setFlag(nCarry, Flags::Carry);
+        self.setZeroFlag(result);
+        self.setFlag(false, Flags::Sub);
+        self.setFlag(false, Flags::HCarry);
+        result
+    }
+
+    fn SLA(&mut self, op1: u8) -> u8 {
+        self.setFlag(bit::get(op1, 7),Flags::Carry);
+        let result = op1 << 1;
+        self.setZeroFlag(result);
+        self.setFlag(false, Flags::Sub);
+        self.setFlag(false, Flags::HCarry);
+        result
+    }
+
+    fn SRA(&mut self, op1: u8) -> u8 {
+        self.setFlag(bit::get(op1, 0),Flags::Carry);
+        let oldBit = bit::get(op1, 7);
+        let result = op1 >> 1;
+        if oldBit {
+            bit::set(result, 7);
+        } 
+        self.setZeroFlag(result);
+        self.setFlag(false, Flags::Sub);
+        self.setFlag(false, Flags::HCarry);
+        result
+    }
+
+    fn SWAP(&mut self, op1: u8) -> u8 {
+        let low = op1 & 0x0f;
+        let high = op1 & 0xf0;
+        let result = (low << 4) | (high >> 4);
+        self.setZeroFlag(result);
+        self.setFlag(false, Flags::Sub);
+        self.setFlag(false, Flags::HCarry);
+        self.setFlag(false, Flags::Carry);
+        result
+    }
+
+    fn SRL(&mut self, op1: u8) -> u8 {
+        self.setFlag(bit::get(op1, 0),Flags::Carry);
+        let result = op1 >> 1;
+        self.setZeroFlag(result);
+        self.setFlag(false, Flags::Sub);
+        self.setFlag(false, Flags::HCarry);
+        result
+    } 
+
+    fn BIT (&mut self, op1: u8, n: u8) {
+        let bit = bit::get(op1, n as usize);
+        self.setFlag(bit, Flags::Zero);
+        self.setFlag(false, Flags::Sub);
+        self.setFlag(true, Flags::HCarry);
+    }
+
     fn unprefixedOpcodes(&mut self, opcode: u8){
         match opcode {
             0x00 => { // NOP
@@ -347,11 +444,7 @@ impl Z80 {
                 }
             },
             0x07 => { // RLCA
-                self.setFlag(bit::get(self.a, 7), Flags::Carry);
-                self.a = self.a.rotate_left(1);
-                self.setFlag(false, Flags::Zero);
-                self.setFlag(false, Flags::Sub);
-                self.setFlag(false, Flags::HCarry);
+                self.a = self.RLC(self.a);
                 
             },
             0x08 => { // LD (u16),SP *OBAVEZNO TESTIRATI*
@@ -412,11 +505,7 @@ impl Z80 {
                 }
             },
             0x0F => { // RRCA
-                self.setFlag(bit::get(self.a, 0), Flags::Carry);
-                self.a = self.a.rotate_right(1);
-                self.setFlag(false, Flags::Zero);
-                self.setFlag(false, Flags::Sub);
-                self.setFlag(false, Flags::HCarry);
+                self.a = self.RRC(self.a);
             }
 
             0x11 => { // LD DE,u16
@@ -467,16 +556,7 @@ impl Z80 {
                 
             },
             0x17 => { // RLA
-                let nCarry = bit::get(self.a, 7);
-                if self.getFlag(Flags::Carry) {
-                    self.a = bit::set(self.a, 0);
-                } else {
-                    self.a = bit::clr(self.a, 0);
-                }
-                self.setFlag(nCarry, Flags::Carry);
-                self.setFlag(false, Flags::Zero);
-                self.setFlag(false, Flags::Sub);
-                self.setFlag(false, Flags::HCarry);
+                self.a = self.RL(self.a);
             },
             0x18 => { // JR i8 
                 self.JR_CONDITIONAL(true);
@@ -1551,6 +1631,141 @@ impl Z80 {
     fn prefixedOpcodes(&mut self, opcode: u8){
 
         match opcode {
+            0x00 => { // RLC B
+                self.b = self.RLC(self.b);
+            },
+            0x01 => { // RLC C
+                self.c = self.RLC(self.c);
+            },
+            0x02 => { // RLC D
+                self.d = self.RLC(self.d);
+            },
+            0x03 => { // RLC E
+                self.e = self.RLC(self.e);
+            },
+            0x04 => { // RLC H
+                self.h = self.RLC(self.h);
+            },
+            0x05 => { // RLC L
+                self.l = self.RLC(self.l);
+            },
+            0x06 => { // RLC (HL)
+                match self.cyclesLeft {
+                    3 => {},
+                    2 => {self.fetched = self.RLC(self.readByte(self.getHL()))},
+                    1 => {self.writeByte(self.getHL(), self.fetched)},
+                    _ => {panic!("cycles left incorrect")}
+                }
+            },
+            0x07 => { // RLC A
+                self.a = self.RLC(self.a);
+            },
+            0x08 => { // RRC B
+                self.b = self.RRC(self.b);
+            },
+            0x09 => { // RRC C
+                self.c = self.RRC(self.c);
+            },
+            0x0A => { // RRC D
+                self.d = self.RRC(self.d);
+            },
+            0x0B => { // RRC E
+                self.e = self.RRC(self.e);
+            },
+            0x0C => { // RRC H
+                self.h = self.RRC(self.h);
+            },
+            0x0D => { // RRC L
+                self.l = self.RRC(self.l);
+            },
+            0x0E => { // RRC (HL)
+                match self.cyclesLeft {
+                    3 => {},
+                    2 => {self.fetched = self.RRC(self.readByte(self.getHL()))},
+                    1 => {self.writeByte(self.getHL(), self.fetched)},
+                    _ => {panic!("cycles left incorrect")}
+                }
+            },
+            0x0F => { // RRC A
+                self.a = self.RRC(self.a);
+            },
+
+            0x10 => { // RL B
+                self.b = self.RL(self.b);
+            },
+            0x11 => { // RL C
+                self.c = self.RL(self.c);
+            },
+            0x12 => { // RL D
+                self.d = self.RL(self.d);
+            },
+            0x13 => { // RL E
+                self.e = self.RL(self.e);
+            },
+            0x14 => { // RL H
+                self.h = self.RL(self.h);
+            },
+            0x15 => { // RL L
+                self.l = self.RL(self.l);
+            },
+            0x16 => { // RL (HL)
+                match self.cyclesLeft {
+                    3 => {},
+                    2 => {self.fetched = self.RL(self.readByte(self.getHL()))},
+                    1 => {self.writeByte(self.getHL(), self.fetched)},
+                    _ => {panic!("cycles left incorrect")}
+                }
+            },
+            0x17 => { // RL A
+                self.a = self.RL(self.a);
+            },
+            0x18 => { // RR B
+                self.b = self.RR(self.b);
+            },
+            0x19 => { // RR C
+                self.c = self.RR(self.c);
+            },
+            0x1A => { // RR D
+                self.d = self.RR(self.d);
+            },
+            0x1B => { // RR E
+                self.e = self.RR(self.e);
+            },
+            0x1C => { // RR H
+                self.h = self.RR(self.h);
+            },
+            0x1D => { // RR L
+                self.l = self.RR(self.l);
+            },
+            0x1E => { // RR (HL)
+                match self.cyclesLeft {
+                    3 => {},
+                    2 => {self.fetched = self.RR(self.readByte(self.getHL()))},
+                    1 => {self.writeByte(self.getHL(), self.fetched)},
+                    _ => {panic!("cycles left incorrect")}
+                }
+            },
+            0x1F => { // RR A
+                self.a = self.RR(self.a);
+            },
+
+            0x20 => {},
+            0x21 => {},
+            0x22 => {},
+            0x23 => {},
+            0x24 => {},
+            0x25 => {},
+            0x26 => {},
+            0x27 => {},
+            0x28 => {},
+            0x29 => {},
+            0x2A => {},
+            0x2B => {},
+            0x2C => {},
+            0x2D => {},
+            0x2E => {},
+            0x2F => {},
+
             _ => ()//panic!("Prefixed opcodes not implemented")
         }
         if self.cyclesLeft == 0 {self.prefixedInstruction = false}
