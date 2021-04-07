@@ -224,77 +224,77 @@ impl Z80 {
     // mozda problemi oko sajkla ali sumnjam
     fn RET_CONDITIAL(&mut self, condition: bool) {
         match self.cyclesLeft {
-            5 => {},
-            4 => {if !condition {self.cyclesLeft = 1} else {self.branchTaken = true}},
-            3 => {},
-            2 => {},
-            1 => { self.pc = (self.POP8() as u16) << 8; self.pc |= self.POP8() as u16},
-            _ => {panic!("cycles left incorrect")}
+            20 => {},
+            16 => {if !condition {self.cyclesLeft = 4} else {self.branchTaken = true}},
+            12 => {},
+            8 => {},
+            4 => { self.pc = (self.POP8() as u16) << 8; self.pc |= self.POP8() as u16},
+            _ => {}
         }
     }
 
     fn RETI(&mut self) {
         match self.cyclesLeft {
-            4 => {},
-            3 => {},
-            2 => {self.pc = (self.POP8() as u16) << 8; self.pc |= self.POP8() as u16},
-            1 => {self.masterInterrupt = true;},
-            _ => {panic!("cycles left incorrect")}
+            16 => {},
+            12 => {},
+            8 => {self.pc = (self.POP8() as u16) << 8; self.pc |= self.POP8() as u16},
+            4 => {self.masterInterrupt = true;},
+            _ => {}
         }
     }
 
     fn RET(&mut self) {
         match self.cyclesLeft {
-            4 => {},
-            3 => {},
-            2 => {},
-            1 => {self.pc = (self.POP8() as u16) << 8; self.pc |= self.POP8() as u16},
-            _ => {panic!("cycles left incorrect")}
+            16 => {},
+            12 => {},
+            8 => {},
+            4 => {self.pc = (self.POP8() as u16) << 8; self.pc |= self.POP8() as u16},
+            _ => {}
         }
     }
 
     fn JP_CONDITIAL(&mut self, condition: bool, addr: u16) {
         match self.cyclesLeft {
-            4 => {},
-            3 => {},
-            2 => {if !condition {self.cyclesLeft = 1} else {self.branchTaken = true}},
-            1 => {self.pc = addr;},
-            _ => {panic!("cycles left incorrect")}
+            16 => {},
+            12 => {},
+            8 => {if !condition {self.cyclesLeft = 4} else {self.branchTaken = true}},
+            4 => {self.pc = addr;},
+            _ => {}
         }
     }
 
     fn CALL_CONDITIONAL(&mut self, condition: bool, addr: u16) {
         match self.cyclesLeft {
-            6 => {},
-            5 => {},
-            4 => {if !condition {self.cyclesLeft = 1} else {self.branchTaken = true}},
-            3 => {self.PUSH8((self.pc + 3) as u8)},
-            2 => {self.PUSH8(((self.pc + 3)>> 8) as u8)},
-            1 => {self.pc = addr;},
-            _ => {panic!("cycles left incorrect")}
+            24 => {},
+            20 => {},
+            16 => {if !condition {self.cyclesLeft = 4} else {self.branchTaken = true}},
+            12 => {self.PUSH8((self.pc + 3) as u8)},
+            8 => {self.PUSH8(((self.pc + 3)>> 8) as u8)},
+            4 => {self.pc = addr;},
+            _ => {}
         }
     }
 
     // nisam siguran
     fn RST(&mut self, offset: u8) {
         match self.cyclesLeft {
-            4 => {},
-            3 => {self.PUSH8((self.pc) as u8)},
-            2 => {self.PUSH8(((self.pc)>> 8) as u8)},
-            1 => {self.pc = 0x0000 + offset as u16},
-            _ => {panic!("cycles left incorrect")}
+            16 => {},
+            12 => {self.PUSH8((self.pc) as u8)},
+            8 => {self.PUSH8(((self.pc)>> 8) as u8)},
+            4 => {self.pc = 0x0000 + offset as u16},
+            _ => {}
         }
     }
 
     fn JR_CONDITIONAL(&mut self, condition: bool) {
         match self.cyclesLeft {
-            3 => {},
-            2 => {if !condition {self.cyclesLeft = 1} else {
+            12 => {},
+            8 => {if !condition {self.cyclesLeft = 4} else {
                 self.branchTaken = true;
                 self.fetchedSigned = self.readByte(self.pc + 1) as i8;
             }},
-            1 => {self.pc = self.pc.wrapping_add(self.fetchedSigned as u16)},
-            _ => {panic!("cycles left incorrect")}
+            4 => {self.pc = self.pc.wrapping_add(self.fetchedSigned as u16)},
+            _ => {}
         }
     }
 
@@ -410,26 +410,26 @@ impl Z80 {
             },
             0x01 => { // LD BC,u16
                 match self.cyclesLeft {
-                    3 => {},
-                    2 => {self.c = self.readByte(self.pc + 1)},
-                    1 => {self.b = self.readByte(self.pc + 2)},
-                    _ => {panic!("cycles left incorrect")}
+                    12 => {},
+                    8 => {self.c = self.readByte(self.pc + 1)},
+                    4 => {self.b = self.readByte(self.pc + 2)},
+                    _ => {}
                 }
                 
             },
             0x02 => { // LD (BC),A 
                 match self.cyclesLeft {
-                    2 => {}
-                    1 => {self.writeByte(self.getBC(), self.a)}
-                    _ => {panic!("cycles left incorrect")}
+                    8 => {}
+                    4 => {self.writeByte(self.getBC(), self.a)}
+                    _ => {}
                 }
                 
             },
             0x03 => { // INC BC
                 match self.cyclesLeft {
-                    2 => {},
-                    1 => {self.setBC(self.getBC().wrapping_add(1))},
-                    _ => {panic!("cycles left incorrect")},
+                    8 => {},
+                    4 => {self.setBC(self.getBC().wrapping_add(1))},
+                    _ => {},
                 }
             },
             0x04 => { // INC B
@@ -446,9 +446,9 @@ impl Z80 {
             },
             0x06 => { // LD B,u8
                 match self.cyclesLeft {
-                    2 => {},
-                    1 => {self.b = self.readByte(self.pc + 1)},
-                    _ => {panic!("cycles left incorrect")},
+                    8 => {},
+                    4 => {self.b = self.readByte(self.pc + 1)},
+                    _ => {},
                 }
             },
             0x07 => { // RLCA
@@ -457,40 +457,40 @@ impl Z80 {
             },
             0x08 => { // LD (u16),SP *OBAVEZNO TESTIRATI*
                 match self.cyclesLeft {
-                    5 => {},
-                    4 => {self.fetched = self.readByte(self.pc + 1)},
-                    3 => {self.fetched = self.readByte((self.fetched as u16) | ((self.readByte(self.pc + 2) as u16) << 8))},
-                    2 => {self.sp = self.fetched as u16},
-                    1 => {self.sp |= (self.fetched as u16) << 8},
-                    _ => panic!("cycles left incorrect")
+                    20 => {},
+                    16 => {self.fetched = self.readByte(self.pc + 1)},
+                    12 => {self.fetched = self.readByte((self.fetched as u16) | ((self.readByte(self.pc + 2) as u16) << 8))},
+                    8 => {self.sp = self.fetched as u16},
+                    4 => {self.sp |= (self.fetched as u16) << 8},
+                    _ => {},
                 }
             },
             0x09 => { // ADD HL,BC *nisam siguran*
                 match self.cyclesLeft {
-                    2 => {},
-                    1 => {
+                    8 => {},
+                    4 => {
                         let (result, carry) = self.getHL().overflowing_add(self.getBC());
                         self.setFlag((self.getHL() & 0xf) + (self.getBC() & 0xf) > 0xf, Flags::HCarry);
                         self.writeBytes(self.getHL(), result);
                         self.setFlag(carry, Flags::Carry);
                         self.setFlag(false, Flags::Sub);
                     },
-                    _ => panic!("cycles left incorrect")
+                    _ => {}
                 }
             },
             0x0A => { // LD A,(BC)
                 match self.cyclesLeft {
-                    2 => {}
-                    1 => {self.a = self.readByte(self.getBC())}
-                    _ => {panic!("cycles left incorrect")}
+                    8 => {}
+                    4 => {self.a = self.readByte(self.getBC())}
+                    _ => {}
                 }
                 
             },
             0x0B => { // DEC BC
                 match self.cyclesLeft {
-                    2 => {},
-                    1 => {self.setBC(self.getBC().wrapping_sub(1))},
-                    _ => {panic!("cycles left incorrect")},
+                    8 => {},
+                    4 => {self.setBC(self.getBC().wrapping_sub(1))},
+                    _ => {},
                 }
             },
             0x0C => { // INC C
@@ -507,9 +507,9 @@ impl Z80 {
             },
             0x0E => { // LD C,u8
                 match self.cyclesLeft {
-                    2 => {},
-                    1 => {self.c = self.readByte(self.pc + 1)},
-                    _ => {panic!("cycles left incorrect")},
+                    8 => {},
+                    4 => {self.c = self.readByte(self.pc + 1)},
+                    _ => {},
                 }
             },
             0x0F => { // RRCA
@@ -518,26 +518,26 @@ impl Z80 {
 
             0x11 => { // LD DE,u16
                 match self.cyclesLeft {
-                    3 => {},
-                    2 => {self.e = self.readByte(self.pc + 1)},
-                    1 => {self.d = self.readByte(self.pc + 2)},
-                    _ => {panic!("cycles left incorrect")}
+                    12 => {},
+                    8 => {self.e = self.readByte(self.pc + 1)},
+                    4 => {self.d = self.readByte(self.pc + 2)},
+                    _ => {}
                 }
                 
             },
             0x12 => { // LD (DE),A 
                 match self.cyclesLeft {
-                    2 => {}
-                    1 => {self.writeByte(self.getDE(), self.a)}
-                    _ => {panic!("cycles left incorrect")}
+                    8 => {}
+                    4 => {self.writeByte(self.getDE(), self.a)}
+                    _ => {}
                 }
                 
             },
             0x13 => { // INC DE
                 match self.cyclesLeft {
-                    2 => {},
-                    1 => {self.setDE(self.getDE().wrapping_add(1))},
-                    _ => {panic!("cycles left incorrect")},
+                    8 => {},
+                    4 => {self.setDE(self.getDE().wrapping_add(1))},
+                    _ => {},
                 }
                 
             },
@@ -557,9 +557,9 @@ impl Z80 {
             },
             0x16 => { // LD D,u8
                 match self.cyclesLeft {
-                    2 => {},
-                    1 => {self.d = self.readByte(self.pc + 1)},
-                    _ => {panic!("cycles left incorrect")},
+                    8 => {},
+                    4 => {self.d = self.readByte(self.pc + 1)},
+                    _ => {},
                 }
                 
             },
@@ -571,30 +571,30 @@ impl Z80 {
             },
             0x19 => { // ADD HL,DE *nisam siguran*
                 match self.cyclesLeft {
-                    2 => {},
-                    1 => {
+                    8 => {},
+                    4 => {
                         let (result, carry) = self.getHL().overflowing_add(self.getDE());
                         self.setFlag((self.getHL() & 0xf) + (self.getDE() & 0xf) > 0xf, Flags::HCarry);
                         self.writeBytes(self.getHL(), result);
                         self.setFlag(carry, Flags::Carry);
                         self.setFlag(false, Flags::Sub);
                     },
-                    _ => panic!("cycles left incorrect")
+                    _ => {}
                 }
             },
             0x1A => { // LD A,(DE)
                 match self.cyclesLeft {
-                    2 => {}
-                    1 => {self.a = self.readByte(self.getDE())}
-                    _ => {panic!("cycles left incorrect")}
+                    8 => {}
+                    4 => {self.a = self.readByte(self.getDE())}
+                    _ => {}
                 }
                 
             },
             0x1B => { // DEC DE
                 match self.cyclesLeft {
-                    2 => {},
-                    1 => {self.setDE(self.getDE().wrapping_sub(1))},
-                    _ => {panic!("cycles left incorrect")},
+                    8 => {},
+                    4 => {self.setDE(self.getDE().wrapping_sub(1))},
+                    _ => {},
                 }
             },
             0x1C => { // INC E
@@ -611,9 +611,9 @@ impl Z80 {
             },
             0x1E => { // LD E,u8
                 match self.cyclesLeft {
-                    2 => {},
-                    1 => {self.e = self.readByte(self.pc + 1)},
-                    _ => {panic!("cycles left incorrect")},
+                    8 => {},
+                    4 => {self.e = self.readByte(self.pc + 1)},
+                    _ => {},
                 }
             },
             0x1F => { // RRA
@@ -634,24 +634,24 @@ impl Z80 {
             },
             0x21 => { // LD HL,u16
                 match self.cyclesLeft {
-                    3 => {},
-                    2 => {self.l = self.readByte(self.pc + 1)},
-                    1 => {self.h = self.readByte(self.pc + 2)},
-                    _ => {panic!("cycles left incorrect")}
+                    12 => {},
+                    8 => {self.l = self.readByte(self.pc + 1)},
+                    4 => {self.h = self.readByte(self.pc + 2)},
+                    _ => {}
                 }
             },
             0x22 => { // LD (HL++),A 
                 match self.cyclesLeft {
-                    2 => {}
-                    1 => {self.writeByte(self.getHL(), self.a); self.setHL(self.getHL().wrapping_add(1))}
-                    _ => {panic!("cycles left incorrect")}
+                    8 => {}
+                    4 => {self.writeByte(self.getHL(), self.a); self.setHL(self.getHL().wrapping_add(1))}
+                    _ => {}
                 }
             },
             0x23 => { // INC HL
                 match self.cyclesLeft {
-                    2 => {},
-                    1 => {self.setHL(self.getHL().wrapping_add(1))},
-                    _ => {panic!("cycles left incorrect")},
+                    8 => {},
+                    4 => {self.setHL(self.getHL().wrapping_add(1))},
+                    _ => {},
                 }
             },
             0x24 => { // INC H
@@ -668,9 +668,9 @@ impl Z80 {
             },
             0x26 => { // LD H,u8
                 match self.cyclesLeft {
-                    2 => {},
-                    1 => {self.h = self.readByte(self.pc + 1)},
-                    _ => {panic!("cycles left incorrect")},
+                    8 => {},
+                    4 => {self.h = self.readByte(self.pc + 1)},
+                    _ => {},
                 }
             },
             0x27 => { // DAA NOT IMPLEMENTED
@@ -681,29 +681,29 @@ impl Z80 {
             },
             0x29 => { // ADD HL,HL *nisam siguran*
                 match self.cyclesLeft {
-                    2 => {},
-                    1 => {
+                    8 => {},
+                    4 => {
                         let (result, carry) = self.getHL().overflowing_add(self.getHL());
                         self.setFlag((self.getHL() & 0xf) + (self.getHL() & 0xf) > 0xf, Flags::HCarry);
                         self.writeBytes(self.getHL(), result);
                         self.setFlag(carry, Flags::Carry);
                         self.setFlag(false, Flags::Sub);
                     },
-                    _ => panic!("cycles left incorrect")
+                    _ => {}
                 }
             },
             0x2A => { // LD A,(HL++)
                 match self.cyclesLeft {
-                    2 => {}
-                    1 => {self.a = self.readByte(self.getBC()); self.setHL(self.getHL().wrapping_add(1))}
-                    _ => {panic!("cycles left incorrect")}
+                    8 => {}
+                    4 => {self.a = self.readByte(self.getBC()); self.setHL(self.getHL().wrapping_add(1))}
+                    _ => {}
                 }
             },
             0x2B => { // DEC HL
                 match self.cyclesLeft {
-                    2 => {},
-                    1 => {self.setHL(self.getHL().wrapping_sub(1))},
-                    _ => {panic!("cycles left incorrect")},
+                    8 => {},
+                    4 => {self.setHL(self.getHL().wrapping_sub(1))},
+                    _ => {},
                 }
             },
             0x2C => { // INC L
@@ -720,9 +720,9 @@ impl Z80 {
             },
             0x2E => { // LD L,u8
                 match self.cyclesLeft {
-                    2 => {},
-                    1 => {self.l = self.readByte(self.pc + 1)},
-                    _ => {panic!("cycles left incorrect")},
+                    8 => {},
+                    4 => {self.l = self.readByte(self.pc + 1)},
+                    _ => {},
                 }
             },
             0x2F => { // CPL
@@ -736,31 +736,31 @@ impl Z80 {
             },
             0x31 => { // LD SP,u16
                 match self.cyclesLeft {
-                    3 => {},
-                    2 => {self.sp = self.readByte(self.pc + 1) as u16},
-                    1 => {self.sp |= (self.readByte(self.pc + 2) as u16) << 8},
-                    _ => {panic!("cycles left incorrect")}
+                    12 => {},
+                    8 => {self.sp = self.readByte(self.pc + 1) as u16},
+                    4 => {self.sp |= (self.readByte(self.pc + 2) as u16) << 8},
+                    _ => {}
                 }
             },
             0x32 => { // LD (HL--),A 
                 match self.cyclesLeft {
-                    2 => {}
-                    1 => {self.writeByte(self.getHL(), self.a); self.setHL(self.getHL().wrapping_sub(1))}
-                    _ => {panic!("cycles left incorrect")}
+                    8 => {}
+                    4 => {self.writeByte(self.getHL(), self.a); self.setHL(self.getHL().wrapping_sub(1))}
+                    _ => {}
                 }
             },
             0x33 => { // INC SP
                 match self.cyclesLeft {
-                    2 => {},
-                    1 => {self.sp = self.sp.wrapping_add(1)},
-                    _ => {panic!("cycles left incorrect")},
+                    8 => {},
+                    4 => {self.sp = self.sp.wrapping_add(1)},
+                    _ => {},
                 }
             },
             0x34 => { // INC (HL)
                 match self.cyclesLeft {
-                    3 => {},
-                    2 => {self.fetched = self.readByte(self.getHL())},
-                    1 => {
+                    12 => {},
+                    8 => {self.fetched = self.readByte(self.getHL())},
+                    4 => {
                         self.setFlag((self.fetched & 0xf) + 1 > 0xf, Flags::HCarry);
 
                         self.fetched = self.fetched.wrapping_add(1);
@@ -769,14 +769,14 @@ impl Z80 {
                         self.setZeroFlag(self.fetched);
                         self.setFlag(false, Flags::Sub);
                     },
-                    _ => {panic!("cycles left incorrect")},
+                    _ => {},
                 }
             },
             0x35 => { // DEC (HL)
                 match self.cyclesLeft {
-                    3 => {},
-                    2 => {self.fetched = self.readByte(self.getHL())},
-                    1 => {
+                    12 => {},
+                    8 => {self.fetched = self.readByte(self.getHL())},
+                    4 => {
                         self.setFlag((self.fetched & 0xf) as i8 - 1 < 0x0, Flags::HCarry);
 
                         self.fetched = self.fetched.wrapping_sub(1);
@@ -785,15 +785,15 @@ impl Z80 {
                         self.setZeroFlag(self.fetched);
                         self.setFlag(true, Flags::Sub);
                     },
-                    _ => {panic!("cycles left incorrect")},
+                    _ => {},
                 }
             },
             0x36 => { // LD (HL),u8
                 match self.cyclesLeft {
-                    3 => {},
-                    2 => {self.fetched = self.readByte(self.pc+1)},
-                    1 => {self.writeByte(self.getHL(), self.fetched)},
-                    _ => {panic!("cycles left incorrect")},
+                    12 => {},
+                    8 => {self.fetched = self.readByte(self.pc+1)},
+                    4 => {self.writeByte(self.getHL(), self.fetched)},
+                    _ => {},
                 }
             },
             0x37 => { // SCF
@@ -806,29 +806,29 @@ impl Z80 {
             },
             0x39 => { // ADD HL,DE *nisam siguran*
                 match self.cyclesLeft {
-                    2 => {},
-                    1 => {
+                    8 => {},
+                    4 => {
                         let (result, carry) = self.getHL().overflowing_add(self.sp);
                         self.setFlag((self.getHL() & 0xf) + (self.sp & 0xf) > 0xf, Flags::HCarry);
                         self.writeBytes(self.getHL(), result);
                         self.setFlag(carry, Flags::Carry);
                         self.setFlag(false, Flags::Sub);
                     },
-                    _ => panic!("cycles left incorrect")
+                    _ => {}
                 }
             },
             0x3A => { // LD A,(HL--)
                 match self.cyclesLeft {
-                    2 => {},
-                    1 => {self.a = self.readByte(self.getBC()); self.setHL(self.getHL().wrapping_sub(1))},
-                    _ => {panic!("cycles left incorrect")}
+                    8 => {},
+                    4 => {self.a = self.readByte(self.getBC()); self.setHL(self.getHL().wrapping_sub(1))},
+                    _ => {}
                 }
             },
             0x3B => { // DEC SP
                 match self.cyclesLeft {
-                    2 => {},
-                    1 => {self.sp = self.sp.wrapping_sub(1)},
-                    _ => {panic!("cycles left incorrect")},
+                    8 => {},
+                    4 => {self.sp = self.sp.wrapping_sub(1)},
+                    _ => {},
                 }
             },
             0x3C => { // INC A
@@ -845,9 +845,9 @@ impl Z80 {
             },
             0x3E => { // LD A,u8
                 match self.cyclesLeft {
-                    2 => {},
-                    1 => {self.a = self.readByte(self.pc + 1)},
-                    _ => {panic!("cycles left incorrect")},
+                    8 => {},
+                    4 => {self.a = self.readByte(self.pc + 1)},
+                    _ => {},
                 }
             },
             0x3F => { // CCF
@@ -876,9 +876,9 @@ impl Z80 {
             },
             0x46 => { // LD B,(HL)
                 match self.cyclesLeft {
-                    2 => {}
-                    1 => {self.b = self.readByte(self.getHL());}
-                    _ => {panic!("cycles left incorrect")}
+                    8 => {}
+                    4 => {self.b = self.readByte(self.getHL());}
+                    _ => {}
                 }
             },
             0x47 => { // LD B,A
@@ -904,9 +904,9 @@ impl Z80 {
             },
             0x4E => { // LD C,(HL)
                 match self.cyclesLeft {
-                    2 => {}
-                    1 => {self.c = self.readByte(self.getHL());}
-                    _ => {panic!("cycles left incorrect")}
+                    8 => {}
+                    4 => {self.c = self.readByte(self.getHL());}
+                    _ => {}
                 }
             },
             0x4F => { // LD C,A
@@ -934,9 +934,9 @@ impl Z80 {
             },
             0x56 => { // LD D,(HL)
                 match self.cyclesLeft {
-                    2 => {}
-                    1 => {self.d = self.readByte(self.getHL());}
-                    _ => {panic!("cycles left incorrect")}
+                    8 => {}
+                    4 => {self.d = self.readByte(self.getHL());}
+                    _ => {}
                 }
             },
             0x57 => { // LD D,A
@@ -962,9 +962,9 @@ impl Z80 {
             },
             0x5E => { // LD E,(HL)
                 match self.cyclesLeft {
-                    2 => {}
-                    1 => {self.e = self.readByte(self.getHL());}
-                    _ => {panic!("cycles left incorrect")}
+                    8 => {}
+                    4 => {self.e = self.readByte(self.getHL());}
+                    _ => {}
                 }
             },
             0x5F => { // LD E,A
@@ -991,9 +991,9 @@ impl Z80 {
             },
             0x66 => { // LD H,(HL)
                 match self.cyclesLeft {
-                    2 => {}
-                    1 => {self.h = self.readByte(self.getHL());}
-                    _ => {panic!("cycles left incorrect")}
+                    8 => {}
+                    4 => {self.h = self.readByte(self.getHL());}
+                    _ => {}
                 }
             },
             0x67 => { // LD H,A
@@ -1019,9 +1019,9 @@ impl Z80 {
             },
             0x6E => { // LD L,(HL)
                 match self.cyclesLeft {
-                    2 => {}
-                    1 => {self.l = self.readByte(self.getHL());}
-                    _ => {panic!("cycles left incorrect")}
+                    8 => {}
+                    4 => {self.l = self.readByte(self.getHL());}
+                    _ => {}
                 }
             },
             0x6F => { // LD L,A
@@ -1030,44 +1030,44 @@ impl Z80 {
 
             0x70 => { // LD (HL),B
                 match self.cyclesLeft {
-                    2 => {}
-                    1 => {self.writeByte(self.getHL(), self.b);}
-                    _ => {panic!("cycles left incorrect")}
+                    8 => {}
+                    4 => {self.writeByte(self.getHL(), self.b);}
+                    _ => {}
                 }
             },
             0x71 => { // LD (HL),C
                 match self.cyclesLeft {
-                    2 => {}
-                    1 => {self.writeByte(self.getHL(), self.c);}
-                    _ => {panic!("cycles left incorrect")}
+                    8 => {}
+                    4 => {self.writeByte(self.getHL(), self.c);}
+                    _ => {}
                 }
             },
             0x72 => { // LD (HL),D
                 match self.cyclesLeft {
-                    2 => {}
-                    1 => {self.writeByte(self.getHL(), self.d);}
-                    _ => {panic!("cycles left incorrect")}
+                    8 => {}
+                    4 => {self.writeByte(self.getHL(), self.d);}
+                    _ => {}
                 }
             },
             0x73 => { // LD (HL),E
                 match self.cyclesLeft {
-                    2 => {}
-                    1 => {self.writeByte(self.getHL(), self.e);}
-                    _ => {panic!("cycles left incorrect")}
+                    8 => {}
+                    4 => {self.writeByte(self.getHL(), self.e);}
+                    _ => {}
                 }
             },
             0x74 => { // LD (HL),H
                 match self.cyclesLeft {
-                    2 => {}
-                    1 => {self.writeByte(self.getHL(), self.h);}
-                    _ => {panic!("cycles left incorrect")}
+                    8 => {}
+                    4 => {self.writeByte(self.getHL(), self.h);}
+                    _ => {}
                 }
             },
             0x75 => { // LD (HL),L
                 match self.cyclesLeft {
-                    2 => {}
-                    1 => {self.writeByte(self.getHL(), self.l);}
-                    _ => {panic!("cycles left incorrect")}
+                    8 => {}
+                    4 => {self.writeByte(self.getHL(), self.l);}
+                    _ => {}
                 }
             },
             0x76 => { // HALT
@@ -1075,9 +1075,9 @@ impl Z80 {
             }
             0x77 => { // LD (HL),A
                 match self.cyclesLeft {
-                    2 => {}
-                    1 => {self.writeByte(self.getHL(), self.a);}
-                    _ => {panic!("cycles left incorrect")}
+                    8 => {}
+                    4 => {self.writeByte(self.getHL(), self.a);}
+                    _ => {}
                 }
             },
             0x78 => { // LD A,B
@@ -1100,9 +1100,9 @@ impl Z80 {
             },
             0x7E => { // LD A,(HL)
                 match self.cyclesLeft {
-                    2 => {}
-                    1 => {self.a = self.readByte(self.getHL());}
-                    _ => {panic!("cycles left incorrect")}
+                    8 => {}
+                    4 => {self.a = self.readByte(self.getHL());}
+                    _ => {}
                 }
             },
             0x7F => { // LD A,A
@@ -1129,11 +1129,11 @@ impl Z80 {
             },
             0x86 => { // ADD A,(HL) *mozda popraviti*
                 match self.cyclesLeft {
-                    2 => {self.fetched = self.readByte(self.getHL())},
-                    1 => {
+                    8 => {self.fetched = self.readByte(self.getHL())},
+                    4 => {
                         self.a = self.ADD(self.a, self.fetched);
                     },
-                    _ => {panic!("cycles left incorrect")}
+                    _ => {}
                 }
             },
             0x87 => { // ADD A,A
@@ -1159,11 +1159,11 @@ impl Z80 {
             },
             0x8E => { // ADC A,(HL) *mozda popraviti*
                 match self.cyclesLeft {
-                    2 => {self.fetched = self.readByte(self.getHL())},
-                    1 => {
+                    8 => {self.fetched = self.readByte(self.getHL())},
+                    4 => {
                         self.a = self.ADC(self.a, self.fetched);
                     },
-                    _ => {panic!("cycles left incorrect")}
+                    _ => {}
                 }
             },
             0x8F => { // ADC A,A
@@ -1190,11 +1190,11 @@ impl Z80 {
             },
             0x96 => { // SUB A,(HL) *mozda popraviti*
                 match self.cyclesLeft {
-                    2 => {self.fetched = self.readByte(self.getHL())},
-                    1 => {
+                    8 => {self.fetched = self.readByte(self.getHL())},
+                    4 => {
                         self.a = self.SUB(self.a, self.fetched);
                     },
-                    _ => {panic!("cycles left incorrect")}
+                    _ => {}
                 }
             },
             0x97 => { // SUB A,A
@@ -1220,11 +1220,11 @@ impl Z80 {
             },
             0x9E => { // SBC A,(HL) *mozda popraviti*
                 match self.cyclesLeft {
-                    2 => {self.fetched = self.readByte(self.getHL())},
-                    1 => {
+                    8 => {self.fetched = self.readByte(self.getHL())},
+                    4 => {
                         self.a = self.SBC(self.a, self.fetched);
                     },
-                    _ => {panic!("cycles left incorrect")}
+                    _ => {}
                 }
             },
             0x9F => { // SBC A,A
@@ -1252,9 +1252,9 @@ impl Z80 {
             },
             0xA6 => { // AND A,(HL)
                 match self.cyclesLeft {
-                    2 => {self.fetched = self.readByte(self.getHL())}
-                    1 => {self.a = self.AND(self.a, self.fetched);}
-                    _ => {panic!("cycles left incorrect")}
+                    8 => {self.fetched = self.readByte(self.getHL())}
+                    4 => {self.a = self.AND(self.a, self.fetched);}
+                    _ => {}
                 }
             },
             0xA7 => { // AND A,A
@@ -1280,9 +1280,9 @@ impl Z80 {
             },
             0xAE => { // XOR A,(HL)
                 match self.cyclesLeft {
-                    2 => {self.fetched = self.readByte(self.getHL())},
-                    1 => {self.a = self.XOR(self.a, self.fetched);},
-                    _ => {panic!("cycles left incorrect")}
+                    8 => {self.fetched = self.readByte(self.getHL())},
+                    4 => {self.a = self.XOR(self.a, self.fetched);},
+                    _ => {}
                 }
             },
             0xAF => { // XOR A,A
@@ -1309,9 +1309,9 @@ impl Z80 {
             },
             0xB6 => { // OR A,(HL)
                 match self.cyclesLeft {
-                    2 => {self.fetched = self.readByte(self.getHL())}
-                    1 => {self.a = self.OR(self.a, self.fetched);}
-                    _ => {panic!("cycles left incorrect")}
+                    8 => {self.fetched = self.readByte(self.getHL())}
+                    4 => {self.a = self.OR(self.a, self.fetched);}
+                    _ => {}
                 }
             },
             0xB7 => { // OR A,A
@@ -1337,9 +1337,9 @@ impl Z80 {
             },
             0xBE => { // CP A,(HL)
                 match self.cyclesLeft {
-                    2 => {self.fetched = self.readByte(self.getHL())}
-                    1 => {self.SUB(self.a, self.fetched);}
-                    _ => {panic!("cycles left incorrect")}
+                    8 => {self.fetched = self.readByte(self.getHL())}
+                    4 => {self.SUB(self.a, self.fetched);}
+                    _ => {}
                 }
             },
             0xBF => { // CP A,A
@@ -1351,10 +1351,10 @@ impl Z80 {
             },
             0xC1 => { // POP BC
                 match self.cyclesLeft {
-                    3 => {},
-                    2 => {self.c = self.POP8()},
-                    1 => {self.b = self.POP8()},
-                    _ => {panic!("cycles left incorrect")}
+                    12 => {},
+                    8 => {self.c = self.POP8()},
+                    4 => {self.b = self.POP8()},
+                    _ => {}
                 }
             },
             0xC2 => { // JP NZ,u16
@@ -1368,18 +1368,18 @@ impl Z80 {
             },
             0xC5 => { // PUSH BC
                 match self.cyclesLeft {
-                    4 => {},
-                    3 => {},
-                    2 => {self.PUSH8(self.b)},
-                    1 => {self.PUSH8(self.c)},
-                    _ => {panic!("cycles left incorrect")}
+                    16 => {},
+                    12 => {},
+                    8 => {self.PUSH8(self.b)},
+                    4 => {self.PUSH8(self.c)},
+                    _ => {}
                 }
             },
             0xC6 => { // ADD A,u8
                 match self.cyclesLeft {
-                    2 => {self.fetched = self.readByte(self.pc + 1)},
-                    1 => {self.a = self.ADD(self.a, self.fetched)},
-                    _ => {panic!("cycles left incorrect")}
+                    8 => {self.fetched = self.readByte(self.pc + 1)},
+                    4 => {self.a = self.ADD(self.a, self.fetched)},
+                    _ => {}
                 }
             },
             0xC7 => { // RST 0x00
@@ -1405,9 +1405,9 @@ impl Z80 {
             },
             0xCE => { // ADC A,u8
                 match self.cyclesLeft {
-                    2 => {self.fetched = self.readByte(self.pc + 1)},
-                    1 => {self.a = self.ADC(self.a, self.fetched)},
-                    _ => {panic!("cycles left incorrect")}
+                    8 => {self.fetched = self.readByte(self.pc + 1)},
+                    4 => {self.a = self.ADC(self.a, self.fetched)},
+                    _ => {}
                 }
             },
             0xCF => { // RST 0x08
@@ -1419,10 +1419,10 @@ impl Z80 {
             },
             0xD1 => { // POP DE
                 match self.cyclesLeft {
-                    3 => {},
-                    2 => {self.e = self.POP8()},
-                    1 => {self.d = self.POP8()},
-                    _ => {panic!("cycles left incorrect")}
+                    12 => {},
+                    8 => {self.e = self.POP8()},
+                    4 => {self.d = self.POP8()},
+                    _ => {}
                 }
             },
             0xD2 => { // JP NC,u16
@@ -1433,18 +1433,18 @@ impl Z80 {
             },
             0xD5 => { // PUSH DE
                 match self.cyclesLeft {
-                    4 => {},
-                    3 => {},
-                    2 => {self.PUSH8(self.d)},
-                    1 => {self.PUSH8(self.e)},
-                    _ => {panic!("cycles left incorrect")}
+                    16 => {},
+                    12 => {},
+                    8 => {self.PUSH8(self.d)},
+                    4 => {self.PUSH8(self.e)},
+                    _ => {}
                 }
             },
             0xD6 => { // SUB A,u8
                 match self.cyclesLeft {
-                    2 => {self.fetched = self.readByte(self.pc + 1)},
-                    1 => {self.a = self.SUB(self.a, self.fetched)},
-                    _ => {panic!("cycles left incorrect")}
+                    8 => {self.fetched = self.readByte(self.pc + 1)},
+                    4 => {self.a = self.SUB(self.a, self.fetched)},
+                    _ => {}
                 }
             },
             0xD7 => { // RST 0x10
@@ -1464,9 +1464,9 @@ impl Z80 {
             },
             0xDE => { // SBC A,u8
                 match self.cyclesLeft {
-                    2 => {self.fetched = self.readByte(self.pc + 1)},
-                    1 => {self.a = self.SBC(self.a, self.fetched)},
-                    _ => {panic!("cycles left incorrect")}
+                    8 => {self.fetched = self.readByte(self.pc + 1)},
+                    4 => {self.a = self.SBC(self.a, self.fetched)},
+                    _ => {}
                 }
             },
             0xDF => { // RST 0x18
@@ -1475,41 +1475,41 @@ impl Z80 {
 
             0xE0 => { // LD (0xFF00+u8),A
                 match self.cyclesLeft {
-                    3 => {},
-                    2 => {self.fetched = self.readByte(self.pc + 1)},
-                    1 => {self.writeByte(0xFF00 + self.fetched as u16, self.a)},
-                    _ => {panic!("cycles left incorrect")}
+                    12 => {},
+                    8 => {self.fetched = self.readByte(self.pc + 1)},
+                    4 => {self.writeByte(0xFF00 + self.fetched as u16, self.a)},
+                    _ => {}
                 }
             },
             0xE1 => { // POP HL
                 match self.cyclesLeft {
-                    3 => {},
-                    2 => {self.l = self.POP8()},
-                    1 => {self.h = self.POP8()},
-                    _ => {panic!("cycles left incorrect")}
+                    12 => {},
+                    8 => {self.l = self.POP8()},
+                    4 => {self.h = self.POP8()},
+                    _ => {}
                 }
             },
             0xE2 => { // LD (0xFF00+C),A
                 match self.cyclesLeft {
-                    2 => {},
-                    1 => {self.writeByte(0xFF00 + self.c as u16, self.a)},
-                    _ => {panic!("cycles left incorrect")}
+                    8 => {},
+                    4 => {self.writeByte(0xFF00 + self.c as u16, self.a)},
+                    _ => {}
                 }
             },
             0xE5 => { // PUSH HL
                 match self.cyclesLeft {
-                    4 => {},
-                    3 => {},
-                    2 => {self.PUSH8(self.h)},
-                    1 => {self.PUSH8(self.l)},
-                    _ => {panic!("cycles left incorrect")}
+                    16 => {},
+                    12 => {},
+                    8 => {self.PUSH8(self.h)},
+                    4 => {self.PUSH8(self.l)},
+                    _ => {}
                 }
             },
             0xE6 => { // AND A,u8
                 match self.cyclesLeft {
-                    2 => {self.fetched = self.readByte(self.pc + 1)},
-                    1 => {self.a = self.AND(self.a, self.fetched)},
-                    _ => {panic!("cycles left incorrect")}
+                    8 => {self.fetched = self.readByte(self.pc + 1)},
+                    4 => {self.a = self.AND(self.a, self.fetched)},
+                    _ => {}
                 }
             },
             0xE7 => { // RST 0x20
@@ -1517,11 +1517,11 @@ impl Z80 {
             },
             0xE8 => { // ADD SP,i8 cycle inaccurate i mozda ne radi
                 match self.cyclesLeft {
-                    4 => {},
-                    3 => {self.fetchedSigned = self.readByte(self.pc + 1) as i8},
-                    2 => {},
-                    1 => {self.sp = self.sp.wrapping_add(self.fetchedSigned as u16)},
-                    _ => {panic!("cycles left incorrect")}
+                    16 => {},
+                    12 => {self.fetchedSigned = self.readByte(self.pc + 1) as i8},
+                    8 => {},
+                    4 => {self.sp = self.sp.wrapping_add(self.fetchedSigned as u16)},
+                    _ => {}
                 }
             },
             0xE9 => { // JP HL
@@ -1529,18 +1529,18 @@ impl Z80 {
             },
             0xEA => { // LD (u16),A
                 match self.cyclesLeft {
-                    4 => {},
-                    3 => {},
-                    2 => {},
-                    1 => {self.writeByte(self.readBytes(self.pc + 1), self.a)},
-                    _ => {panic!("cycles left incorrect")}
+                    16 => {},
+                    12 => {},
+                    8 => {},
+                    4 => {self.writeByte(self.readBytes(self.pc + 1), self.a)},
+                    _ => {}
                 }
             },
             0xEE => { // XOR A,u8
                 match self.cyclesLeft {
-                    2 => {self.fetched = self.readByte(self.pc + 1)},
-                    1 => {self.a = self.XOR(self.a, self.fetched)},
-                    _ => {panic!("cycles left incorrect")}
+                    8 => {self.fetched = self.readByte(self.pc + 1)},
+                    4 => {self.a = self.XOR(self.a, self.fetched)},
+                    _ => {}
                 }
             },
             0xEF => { // RST 0x28
@@ -1550,25 +1550,25 @@ impl Z80 {
 
             0xF0 => { // LD A,(0xFF00+u8)
                 match self.cyclesLeft {
-                    3 => {},
-                    2 => {self.fetched = self.readByte(self.pc + 1)},
-                    1 => {self.a = self.readByte(0xFF00 + self.fetched as u16)},
-                    _ => {panic!("cycles left incorrect")}
+                    12 => {},
+                    8 => {self.fetched = self.readByte(self.pc + 1)},
+                    4 => {self.a = self.readByte(0xFF00 + self.fetched as u16)},
+                    _ => {}
                 }
             },
             0xF1 => { // POP AF
                 match self.cyclesLeft {
-                    3 => {},
-                    2 => {self.f = self.POP8(); self.f = self.f & 0xF0},
-                    1 => {self.a = self.POP8()},
-                    _ => {panic!("cycles left incorrect")}
+                    12 => {},
+                    8 => {self.f = self.POP8(); self.f = self.f & 0xF0},
+                    4 => {self.a = self.POP8()},
+                    _ => {}
                 }
             },
             0xF2 => { // LD A,(0xFF00+C)
                 match self.cyclesLeft {
-                    2 => {},
-                    1 => {self.a = self.readByte(0xFF00 + self.c as u16)},
-                    _ => {panic!("cycles left incorrect")}
+                    8 => {},
+                    4 => {self.a = self.readByte(0xFF00 + self.c as u16)},
+                    _ => {}
                 }
             },
             0xF3 => { // DI 
@@ -1576,18 +1576,18 @@ impl Z80 {
             },
             0xF5 => { // PUSH AF
                 match self.cyclesLeft {
-                    4 => {},
-                    3 => {},
-                    2 => {self.PUSH8(self.a)},
-                    1 => {self.PUSH8(self.f)},
-                    _ => {panic!("cycles left incorrect")}
+                    16 => {},
+                    12 => {},
+                    8 => {self.PUSH8(self.a)},
+                    4 => {self.PUSH8(self.f)},
+                    _ => {}
                 }
             },
             0xF6 => { // ADD A,u8
                 match self.cyclesLeft {
-                    2 => {self.fetched = self.readByte(self.pc + 1)},
-                    1 => {self.a = self.OR(self.a, self.fetched)},
-                    _ => {panic!("cycles left incorrect")}
+                    8 => {self.fetched = self.readByte(self.pc + 1)},
+                    4 => {self.a = self.OR(self.a, self.fetched)},
+                    _ => {}
                 }
             },
             0xF7 => { // RST 0x30
@@ -1595,28 +1595,28 @@ impl Z80 {
             },
             0xF8 => { // LD HL,SP+i8 cycle inaccurate i mozda ne radi
                 match self.cyclesLeft {
-                    3 => {},
-                    2 => {self.fetchedSigned = self.readByte(self.pc + 1) as i8},
-                    1 => {    
+                    12 => {},
+                    8 => {self.fetchedSigned = self.readByte(self.pc + 1) as i8},
+                    4 => {    
                         self.sp = self.sp.wrapping_add(self.fetchedSigned as u16); 
                         self.setHL(self.sp)},
-                    _ => {panic!("cycles left incorrect")}
+                    _ => {}
                 }
             },
             0xF9 => { // LD SP,HL
                 match self.cyclesLeft {
-                    2 => {},
-                    1 => {self.sp = self.getHL()},
-                    _ => {panic!("cycles left incorrect")}
+                    8 => {},
+                    4 => {self.sp = self.getHL()},
+                    _ => {}
                 }
             },
             0xFA => { // LD A,(u16)
                 match self.cyclesLeft {
-                    4 => {},
-                    3 => {},
-                    2 => {},
-                    1 => {self.a = self.readByte(self.readBytes(self.pc + 1))},
-                    _ => {panic!("cycles left incorrect")}
+                    16 => {},
+                    12 => {},
+                    8 => {},
+                    4 => {self.a = self.readByte(self.readBytes(self.pc + 1))},
+                    _ => {}
                 }
             },
             0xFB => { // EI
@@ -1624,9 +1624,9 @@ impl Z80 {
             },
             0xFE => { // CP A,u8
                 match self.cyclesLeft {
-                    2 => {self.fetched = self.readByte(self.pc + 1)},
-                    1 => {self.SUB(self.a, self.fetched);},
-                    _ => {panic!("cycles left incorrect")}
+                    8 => {self.fetched = self.readByte(self.pc + 1)},
+                    4 => {self.SUB(self.a, self.fetched);},
+                    _ => {}
                 }
             },
             0xFF => { // RST 0x38
@@ -1659,10 +1659,10 @@ impl Z80 {
             },
             0x06 => { // RLC (HL)
                 match self.cyclesLeft {
-                    3 => {},
-                    2 => {self.fetched = self.RLC(self.readByte(self.getHL()))},
-                    1 => {self.writeByte(self.getHL(), self.fetched)},
-                    _ => {panic!("cycles left incorrect")}
+                    12 => {},
+                    8 => {self.fetched = self.RLC(self.readByte(self.getHL()))},
+                    4 => {self.writeByte(self.getHL(), self.fetched)},
+                    _ => {}
                 }
             },
             0x07 => { // RLC A
@@ -1688,10 +1688,10 @@ impl Z80 {
             },
             0x0E => { // RRC (HL)
                 match self.cyclesLeft {
-                    3 => {},
-                    2 => {self.fetched = self.RRC(self.readByte(self.getHL()))},
-                    1 => {self.writeByte(self.getHL(), self.fetched)},
-                    _ => {panic!("cycles left incorrect")}
+                    12 => {},
+                    8 => {self.fetched = self.RRC(self.readByte(self.getHL()))},
+                    4 => {self.writeByte(self.getHL(), self.fetched)},
+                    _ => {}
                 }
             },
             0x0F => { // RRC A
@@ -1718,10 +1718,10 @@ impl Z80 {
             },
             0x16 => { // RL (HL)
                 match self.cyclesLeft {
-                    3 => {},
-                    2 => {self.fetched = self.RL(self.readByte(self.getHL()))},
-                    1 => {self.writeByte(self.getHL(), self.fetched)},
-                    _ => {panic!("cycles left incorrect")}
+                    12 => {},
+                    8 => {self.fetched = self.RL(self.readByte(self.getHL()))},
+                    4 => {self.writeByte(self.getHL(), self.fetched)},
+                    _ => {}
                 }
             },
             0x17 => { // RL A
@@ -1747,10 +1747,10 @@ impl Z80 {
             },
             0x1E => { // RR (HL)
                 match self.cyclesLeft {
-                    3 => {},
-                    2 => {self.fetched = self.RR(self.readByte(self.getHL()))},
-                    1 => {self.writeByte(self.getHL(), self.fetched)},
-                    _ => {panic!("cycles left incorrect")}
+                    12 => {},
+                    8 => {self.fetched = self.RR(self.readByte(self.getHL()))},
+                    4 => {self.writeByte(self.getHL(), self.fetched)},
+                    _ => {}
                 }
             },
             0x1F => { // RR A
@@ -1777,10 +1777,10 @@ impl Z80 {
             },
             0x26 => { // SLA (HL)
                 match self.cyclesLeft {
-                    3 => {},
-                    2 => {self.fetched = self.SLA(self.readByte(self.getHL()))},
-                    1 => {self.writeByte(self.getHL(), self.fetched)},
-                    _ => {panic!("cycles left incorrect")}
+                    12 => {},
+                    8 => {self.fetched = self.SLA(self.readByte(self.getHL()))},
+                    4 => {self.writeByte(self.getHL(), self.fetched)},
+                    _ => {}
                 }
             },
             0x27 => { // SLA A
@@ -1806,10 +1806,10 @@ impl Z80 {
             },
             0x2E => { // SRA (HL)
                 match self.cyclesLeft {
-                    3 => {},
-                    2 => {self.fetched = self.SRA(self.readByte(self.getHL()))},
-                    1 => {self.writeByte(self.getHL(), self.fetched)},
-                    _ => {panic!("cycles left incorrect")}
+                    12 => {},
+                    8 => {self.fetched = self.SRA(self.readByte(self.getHL()))},
+                    4 => {self.writeByte(self.getHL(), self.fetched)},
+                    _ => {}
                 }
             },
             0x2F => { // SRA A
@@ -1836,10 +1836,10 @@ impl Z80 {
             },
             0x36 => { // SWAP (HL)
                 match self.cyclesLeft {
-                    3 => {},
-                    2 => {self.fetched = self.SWAP(self.readByte(self.getHL()))},
-                    1 => {self.writeByte(self.getHL(), self.fetched)},
-                    _ => {panic!("cycles left incorrect")}
+                    12 => {},
+                    8 => {self.fetched = self.SWAP(self.readByte(self.getHL()))},
+                    4 => {self.writeByte(self.getHL(), self.fetched)},
+                    _ => {}
                 }
             },
             0x37 => { // SWAP A
@@ -1865,10 +1865,10 @@ impl Z80 {
             },
             0x3E => { // SRL (HL)
                 match self.cyclesLeft {
-                    3 => {},
-                    2 => {self.fetched = self.SRL(self.readByte(self.getHL()))},
-                    1 => {self.writeByte(self.getHL(), self.fetched)},
-                    _ => {panic!("cycles left incorrect")}
+                    12 => {},
+                    8 => {self.fetched = self.SRL(self.readByte(self.getHL()))},
+                    4 => {self.writeByte(self.getHL(), self.fetched)},
+                    _ => {}
                 }
             },
             0x3F => { // SRL A
@@ -1895,9 +1895,9 @@ impl Z80 {
             },
             0x46 => { // BIT (HL),0
                 match self.cyclesLeft {
-                    2 => {self.fetched = self.readByte(self.getHL())},
-                    1 => {self.BIT(self.fetched, 0)},
-                    _ => {panic!("cycles left incorrect")}
+                    8 => {self.fetched = self.readByte(self.getHL())},
+                    4 => {self.BIT(self.fetched, 0)},
+                    _ => {}
                 }
             },
             0x47 => { // BIT A,0
@@ -1923,9 +1923,9 @@ impl Z80 {
             },
             0x4E => { // BIT (HL),1
                 match self.cyclesLeft {
-                    2 => {self.fetched = self.readByte(self.getHL())},
-                    1 => {self.BIT(self.fetched, 1)},
-                    _ => {panic!("cycles left incorrect")}
+                    8 => {self.fetched = self.readByte(self.getHL())},
+                    4 => {self.BIT(self.fetched, 1)},
+                    _ => {}
                 }
             },
             0x4F => { // BIT A,1
@@ -1952,9 +1952,9 @@ impl Z80 {
             },
             0x56 => { // BIT (HL),2
                 match self.cyclesLeft {
-                    2 => {self.fetched = self.readByte(self.getHL())},
-                    1 => {self.BIT(self.fetched, 2)},
-                    _ => {panic!("cycles left incorrect")}
+                    8 => {self.fetched = self.readByte(self.getHL())},
+                    4 => {self.BIT(self.fetched, 2)},
+                    _ => {}
                 }
             },
             0x57 => { // BIT A,2
@@ -1980,9 +1980,9 @@ impl Z80 {
             },
             0x5E => { // BIT (HL),3
                 match self.cyclesLeft {
-                    2 => {self.fetched = self.readByte(self.getHL())},
-                    1 => {self.BIT(self.fetched, 3)},
-                    _ => {panic!("cycles left incorrect")}
+                    8 => {self.fetched = self.readByte(self.getHL())},
+                    4 => {self.BIT(self.fetched, 3)},
+                    _ => {}
                 }
             },
             0x5F => { // BIT A,3
@@ -2009,9 +2009,9 @@ impl Z80 {
             },
             0x66 => { // BIT (HL),4
                 match self.cyclesLeft {
-                    2 => {self.fetched = self.readByte(self.getHL())},
-                    1 => {self.BIT(self.fetched, 4)},
-                    _ => {panic!("cycles left incorrect")}
+                    8 => {self.fetched = self.readByte(self.getHL())},
+                    4 => {self.BIT(self.fetched, 4)},
+                    _ => {}
                 }
             },
             0x67 => { // BIT A,4
@@ -2037,9 +2037,9 @@ impl Z80 {
             },
             0x6E => { // BIT (HL),5
                 match self.cyclesLeft {
-                    2 => {self.fetched = self.readByte(self.getHL())},
-                    1 => {self.BIT(self.fetched, 5)},
-                    _ => {panic!("cycles left incorrect")}
+                    8 => {self.fetched = self.readByte(self.getHL())},
+                    4 => {self.BIT(self.fetched, 5)},
+                    _ => {}
                 }
             },
             0x6F => { // BIT A,5
@@ -2066,9 +2066,9 @@ impl Z80 {
             },
             0x76 => { // BIT (HL),6
                 match self.cyclesLeft {
-                    2 => {self.fetched = self.readByte(self.getHL())},
-                    1 => {self.BIT(self.fetched, 6)},
-                    _ => {panic!("cycles left incorrect")}
+                    8 => {self.fetched = self.readByte(self.getHL())},
+                    4 => {self.BIT(self.fetched, 6)},
+                    _ => {}
                 }
             },
             0x77 => { // BIT A,6
@@ -2094,9 +2094,9 @@ impl Z80 {
             },
             0x7E => { // BIT (HL),7
                 match self.cyclesLeft {
-                    2 => {self.fetched = self.readByte(self.getHL())},
-                    1 => {self.BIT(self.fetched, 7)},
-                    _ => {panic!("cycles left incorrect")}
+                    8 => {self.fetched = self.readByte(self.getHL())},
+                    4 => {self.BIT(self.fetched, 7)},
+                    _ => {}
                 }
             },
             0x7F => { // BIT A,7
@@ -2126,7 +2126,7 @@ impl Z80 {
                     3 => {},
                     2 => {self.fetched = self.RES(self.readByte(self.getHL()), 0)},
                     1 => {self.writeByte(self.getHL(), self.fetched)},
-                    _ => {panic!("cycles left incorrect")}
+                    _ => {}
                 }
             },
             0x87 => { // RES A,0
@@ -2155,7 +2155,7 @@ impl Z80 {
                     3 => {},
                     2 => {self.fetched = self.RES(self.readByte(self.getHL()), 1)},
                     1 => {self.writeByte(self.getHL(), self.fetched)},
-                    _ => {panic!("cycles left incorrect")}
+                    _ => {}
                 }
             },
             0x8F => { // RES A,1
@@ -2185,7 +2185,7 @@ impl Z80 {
                     3 => {},
                     2 => {self.fetched = self.RES(self.readByte(self.getHL()), 2)},
                     1 => {self.writeByte(self.getHL(), self.fetched)},
-                    _ => {panic!("cycles left incorrect")}
+                    _ => {}
                 }
             },
             0x97 => { // RES A,2
@@ -2214,7 +2214,7 @@ impl Z80 {
                     3 => {},
                     2 => {self.fetched = self.RES(self.readByte(self.getHL()), 3)},
                     1 => {self.writeByte(self.getHL(), self.fetched)},
-                    _ => {panic!("cycles left incorrect")}
+                    _ => {}
                 }
             },
             0x9F => { // RES A,3
@@ -2244,7 +2244,7 @@ impl Z80 {
                     3 => {},
                     2 => {self.fetched = self.RES(self.readByte(self.getHL()), 4)},
                     1 => {self.writeByte(self.getHL(), self.fetched)},
-                    _ => {panic!("cycles left incorrect")}
+                    _ => {}
                 }
             },
             0xA7 => { // RES A,4
@@ -2273,7 +2273,7 @@ impl Z80 {
                     3 => {},
                     2 => {self.fetched = self.RES(self.readByte(self.getHL()), 5)},
                     1 => {self.writeByte(self.getHL(), self.fetched)},
-                    _ => {panic!("cycles left incorrect")}
+                    _ => {}
                 }
             },
             0xAF => { // RES A,5
@@ -2303,7 +2303,7 @@ impl Z80 {
                     3 => {},
                     2 => {self.fetched = self.RES(self.readByte(self.getHL()), 6)},
                     1 => {self.writeByte(self.getHL(), self.fetched)},
-                    _ => {panic!("cycles left incorrect")}
+                    _ => {}
                 }
             },
             0xB7 => { // RES A,6
@@ -2332,7 +2332,7 @@ impl Z80 {
                     3 => {},
                     2 => {self.fetched = self.RES(self.readByte(self.getHL()), 7)},
                     1 => {self.writeByte(self.getHL(), self.fetched)},
-                    _ => {panic!("cycles left incorrect")}
+                    _ => {}
                 }
             },
             0xBF => { // RES A,7
@@ -2362,7 +2362,7 @@ impl Z80 {
                     3 => {},
                     2 => {self.fetched = self.SET(self.readByte(self.getHL()), 0)},
                     1 => {self.writeByte(self.getHL(), self.fetched)},
-                    _ => {panic!("cycles left incorrect")}
+                    _ => {}
                 }
             },
             0xC7 => { // SET A,0
@@ -2391,7 +2391,7 @@ impl Z80 {
                     3 => {},
                     2 => {self.fetched = self.SET(self.readByte(self.getHL()), 1)},
                     1 => {self.writeByte(self.getHL(), self.fetched)},
-                    _ => {panic!("cycles left incorrect")}
+                    _ => {}
                 }
             },
             0xCF => { // SET A,1
@@ -2421,7 +2421,7 @@ impl Z80 {
                     3 => {},
                     2 => {self.fetched = self.SET(self.readByte(self.getHL()), 2)},
                     1 => {self.writeByte(self.getHL(), self.fetched)},
-                    _ => {panic!("cycles left incorrect")}
+                    _ => {}
                 }
             },
             0xD7 => { // SET A,2
@@ -2450,7 +2450,7 @@ impl Z80 {
                     3 => {},
                     2 => {self.fetched = self.SET(self.readByte(self.getHL()), 3)},
                     1 => {self.writeByte(self.getHL(), self.fetched)},
-                    _ => {panic!("cycles left incorrect")}
+                    _ => {}
                 }
             },
             0xDF => { // SET A,3
@@ -2480,7 +2480,7 @@ impl Z80 {
                     3 => {},
                     2 => {self.fetched = self.SET(self.readByte(self.getHL()), 4)},
                     1 => {self.writeByte(self.getHL(), self.fetched)},
-                    _ => {panic!("cycles left incorrect")}
+                    _ => {}
                 }
             },
             0xE7 => { // SET A,4
@@ -2509,7 +2509,7 @@ impl Z80 {
                     3 => {},
                     2 => {self.fetched = self.SET(self.readByte(self.getHL()), 5)},
                     1 => {self.writeByte(self.getHL(), self.fetched)},
-                    _ => {panic!("cycles left incorrect")}
+                    _ => {}
                 }
             },
             0xEF => { // SET A,5
@@ -2539,7 +2539,7 @@ impl Z80 {
                     3 => {},
                     2 => {self.fetched = self.SET(self.readByte(self.getHL()), 6)},
                     1 => {self.writeByte(self.getHL(), self.fetched)},
-                    _ => {panic!("cycles left incorrect")}
+                    _ => {}
                 }
             },
             0xF7 => { // SET A,6
@@ -2568,7 +2568,7 @@ impl Z80 {
                     3 => {},
                     2 => {self.fetched = self.SET(self.readByte(self.getHL()), 7)},
                     1 => {self.writeByte(self.getHL(), self.fetched)},
-                    _ => {panic!("cycles left incorrect")}
+                    _ => {}
                 }
             },
             0xFF => { // SET A,7
@@ -2604,7 +2604,7 @@ impl Z80 {
         if self.justBooted {
             self.currentOpcode = self.readByte(self.pc);
             let (_, _, cycles) = self.getInstructionInfo(self.currentOpcode);
-            self.cyclesLeft = cycles;
+            self.cyclesLeft = cycles * 4;
             self.justBooted = false;
         }
         self.executeOneCycle(self.currentOpcode);
@@ -2618,7 +2618,7 @@ impl Z80 {
             
             self.currentOpcode = self.readByte(self.pc);
             let (_, _, cycles) = self.getInstructionInfo(self.currentOpcode);
-            self.cyclesLeft = cycles;
+            self.cyclesLeft = cycles * 4;
         }
     }
 }

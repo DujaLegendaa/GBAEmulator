@@ -39,13 +39,26 @@ impl Bus {
                 }
             },
             0xFE00..= 0xFE9F => {
-                panic!("Not usable memory");
+                todo!("Sprite table not implemented");
             },
             0xFEA0..= 0xFEFF => {
-                todo!("I/O registers")
+                panic!("Unusable memory")
             },
             0xFF00..= 0xFF7F => {
-                todo!("Sprite table not implemented");
+                match addr & 0x00FF {
+                    0x00 => {todo!("Controller not implemented")},
+                    0x01..= 0x02 => {todo!("Communication not implemented")},
+                    0x04..= 0x07 => {todo!("Divider and Timer not implemented")},
+                    0x10..= 0x26 => {/* Sound, not implementing*/0},
+                    0x30..= 0x3F => {/* Waveform RAM, not implementing*/0},
+                    0x40..= 0x4B => {todo!("LCD register not implemented")},
+                    0x4F => {/* GBC VRAM Bank Select */0},
+                    0x50 => {/* Set to disable boot ROM ??*/0},
+                    0x51..= 0x55 => {/* GBC HDMA */0},
+                    0x68..= 0x69 => {/* GBC BCP/OCP */0},
+                    0x70 => {/* GBC WRAM Bank Select */0}
+                    _ => {panic!("Unknown write to {}", addr)}
+                }
             },
             0xFF80..= 0xFFFE => {
                 self.highRam[((addr & 0x00ff) - 0x0080) as usize]
@@ -78,13 +91,26 @@ impl Bus {
                 }
             },
             0xFE00..= 0xFE9F => {
-                panic!("Not usable memory");
+                todo!("Sprite table not implemented");
             },
             0xFEA0..= 0xFEFF => {
-                todo!("I/O registers")
+                panic!("Unusable memory");
             },
             0xFF00..= 0xFF7F => {
-                todo!("Sprite table not implemented");
+                match addr & 0x00FF {
+                    0x00 => {todo!("Controller not implemented")},
+                    0x01..= 0x02 => {todo!("Communication not implemented")},
+                    0x04..= 0x07 => {todo!("Divider and Timer not implemented")},
+                    0x10..= 0x26 => {/* Sound, not implementing*/},
+                    0x30..= 0x3F => {/* Waveform RAM, not implementing*/},
+                    0x40..= 0x4B => {todo!("LCD register not implemented")},
+                    0x4F => {/* GBC VRAM Bank Select */},
+                    0x50 => {/* Set to disable boot ROM ??*/},
+                    0x51..= 0x55 => {/* GBC HDMA */},
+                    0x68..= 0x69 => {/* GBC BCP/OCP */},
+                    0x70 => {/* GBC WRAM Bank Select */}
+                    _ => {panic!("Unknown write to {}", addr)}
+                }
             },
             0xFF80..= 0xFFFE => {
                 self.highRam[((addr & 0x00ff) - 0x0080) as usize] = data;
