@@ -27,17 +27,16 @@ pub fn showRam(c: &Z80, startIndex: u16, nRows: u16, nCols: u16) -> String {
 pub fn showRegisters(c: &Z80) -> String {
     let mut nStr = String::new();
     let mut nStr2 = String::new();
-    let mut i = 0;
-    nStr.push_str(&format!("A: {:02x} ", c.a));
-    nStr2.push_str(&format!("F: {:02x} ", c.f));
-    nStr.push_str(&format!("B: {:02x} ", c.b));
-    nStr2.push_str(&format!("C: {:02x} ", c.c));
-    nStr.push_str(&format!("D: {:02x} ", c.d));
-    nStr2.push_str(&format!("E: {:02x} ", c.e));
-    nStr.push_str(&format!("H: {:02x} ", c.h));
-    nStr2.push_str(&format!("L: {:02x} ", c.l));
-    nStr.push_str(&format!("SP: {:02x} ", c.sp));
-    nStr2.push_str(&format!("PC: {:02x} ", c.pc));
+    nStr.push_str(&format!("A: {:02X} ", c.a));
+    nStr2.push_str(&format!("F: {:02X} ", c.f));
+    nStr.push_str(&format!("B: {:02X} ", c.b));
+    nStr2.push_str(&format!("C: {:02X} ", c.c));
+    nStr.push_str(&format!("D: {:02X} ", c.d));
+    nStr2.push_str(&format!("E: {:02X} ", c.e));
+    nStr.push_str(&format!("H: {:02X} ", c.h));
+    nStr2.push_str(&format!("L: {:02X} ", c.l));
+    nStr.push_str(&format!("SP: {:02X} ", c.sp));
+    nStr2.push_str(&format!("PC: {:02X} ", c.pc));
 
     nStr.push('\n');
     nStr.push_str(&nStr2);
@@ -71,6 +70,14 @@ pub fn showCode(c: &Z80, startIndex: u16, nInstructions: u16) -> String{
     return nStr;
 }
 
+pub fn showTimers(c: &Z80) -> String {
+    let mut nStr = String::new();
+    nStr.push_str(&format!("DIV [{:b}]\n", c.bus.divRegister));
+    nStr.push_str(&format!("TIMA [{:b}]\n", c.bus.timaRegister));
+    nStr.push_str(&format!("TMA [{:b}]\n", c.bus.tmaRegister));
+    nStr.push_str(&format!("TAC [{:b}]\n", c.bus.tacRegister));
+    nStr
+}
 
 pub fn renderFullDissassembly(c: &Z80, ramPage1: u16, ramPage2: u16, f: &Font, w: &mut RenderWindow) {
     let mut ramText = Text::default();
@@ -113,13 +120,19 @@ pub fn renderFullDissassembly(c: &Z80, ramPage1: u16, ramPage2: u16, f: &Font, w
     registerText.set_fill_color(Color::WHITE);
     registerText.set_position((tArr[0].position().x, tArr[0].local_bounds().height + 20.0));
 
-    
+    let mut timerText = Text::default();
+    timerText.set_font(f);
+    timerText.set_string(&showTimers(c));
+    timerText.set_fill_color(Color::WHITE);
+    timerText.set_character_size(CHAR_SIZE + 6);
+    timerText.set_position((registerText.position().x, registerText.local_bounds().height + registerText.position().y + 20.0));
+
     let mut codeText = Text::default();
     codeText.set_font(f);
-    codeText.set_string(&showCode(c, c.pc, 30));
+    codeText.set_string(&showCode(c, c.pc, 15));
     codeText.set_character_size(CHAR_SIZE);
     codeText.set_fill_color(Color::WHITE);
-    codeText.set_position((registerText.position().x, registerText.local_bounds().height + registerText.position().y + 20.0));
+    codeText.set_position((timerText.position().x, timerText.local_bounds().height + timerText.position().y + 20.0));
     
     /*
     let mut registerBinaryText = Text::default();
@@ -135,6 +148,7 @@ pub fn renderFullDissassembly(c: &Z80, ramPage1: u16, ramPage2: u16, f: &Font, w
         w.draw(e);
     }
     w.draw(&registerText);
+    w.draw(&timerText);
     
     w.draw(&codeText);
     //w.draw(&registerBinaryText);
