@@ -72,10 +72,10 @@ pub fn showCode(c: &Z80, startIndex: u16, nInstructions: u16) -> String{
 
 pub fn showTimers(c: &Z80) -> String {
     let mut nStr = String::new();
-    nStr.push_str(&format!("DIV [{:b}]\n", c.bus.divRegister));
-    nStr.push_str(&format!("TIMA [{:b}]\n", c.bus.timaRegister));
-    nStr.push_str(&format!("TMA [{:b}]\n", c.bus.tmaRegister));
-    nStr.push_str(&format!("TAC [{:b}]\n", c.bus.tacRegister));
+    nStr.push_str(&format!("DIV [{:b}]\n", c.bus.timerRegisters.divRegister));
+    nStr.push_str(&format!("TIMA [{:b}]\n", c.bus.timerRegisters.timaRegister));
+    nStr.push_str(&format!("TMA [{:b}]\n", c.bus.timerRegisters.tmaRegister));
+    nStr.push_str(&format!("TAC [{:b}]\n", c.bus.timerRegisters.tacRegister));
     nStr
 }
 

@@ -4,6 +4,8 @@ mod cpu;
 mod bit;
 mod bus;
 mod visualizer;
+mod gpu;
+mod timer;
 extern crate sfml;
 use sfml::{
     graphics::{

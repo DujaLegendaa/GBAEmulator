@@ -330,9 +330,9 @@ impl Z80 {
         let nCarry = bit::get(op1, 7);
         let mut result = op1.rotate_left(1);
         if self.getFlag(Flags::Carry) {
-            result = bit::set(op1, 0);
+            result = bit::set(result, 0);
         } else {
-            result = bit::clr(op1, 0);
+            result = bit::clr(result, 0);
         }
         self.setFlag(nCarry, Flags::Carry);
         self.setZeroFlag(result);
@@ -345,9 +345,9 @@ impl Z80 {
         let nCarry = bit::get(op1, 0);
         let mut result = op1.rotate_right(1);
         if self.getFlag(Flags::Carry) {
-            result = bit::set(op1, 7);
+            result = bit::set(result, 7);
         } else {
-            result = bit::clr(op1, 7);
+            result = bit::clr(result, 7);
         }
         self.setFlag(nCarry, Flags::Carry);
         self.setZeroFlag(result);
@@ -2620,6 +2620,27 @@ impl Z80 {
         }
     }
 
+    fn handleInterrupts(&mut self) {
+        if self.masterInterrupt && !self.cbFlag{
+            if self.bus.getInterruptRequest(IntrFlags::VBlank) && self.bus.getInterruptEnable(IntrFlags::VBlank) {
+
+            } else if self.bus.getInterruptRequest(IntrFlags::LCD) && self.bus.getInterruptEnable(IntrFlags::LCD) {
+
+            } else if self.bus.getInterruptRequest(IntrFlags::Timer) && self.bus.getInterruptEnable(IntrFlags::Timer) {
+                self.bus.resetInterruptRequest(IntrFlags::Timer);
+                self.masterInterrupt = false;
+                self.halted = false;
+                self.currentOpcode = 0xE4;
+                self.cyclesLeft = 20;
+                return;
+            } else if self.bus.getInterruptRequest(IntrFlags::Serial) && self.bus.getInterruptEnable(IntrFlags::Serial) {
+
+            } else if self.bus.getInterruptRequest(IntrFlags::Joypad) && self.bus.getInterruptEnable(IntrFlags::Joypad) {
+
+            }
+        }
+    }
+
     pub fn clock(&mut self) {
         if self.justBooted {
             self.currentOpcode = self.readByte(self.pc);
@@ -2630,7 +2651,9 @@ impl Z80 {
         if !self.halted {
             self.executeOneCycle(self.currentOpcode);
             self.cyclesLeft -= 1;
-            self.bus.incrTimers();
+            if self.bus.timerRegisters.incrTimers() {
+                self.bus.requestInterrupt(IntrFlags::Timer);
+            }
         }
 
         if self.cyclesLeft == 0 {
@@ -2641,24 +2664,8 @@ impl Z80 {
             self.branchTaken = false;
 
             // brateee testirati sve ovo ako je instrukcija prefiksovana ili nesto
-            if self.masterInterrupt && !self.cbFlag{
-                if self.bus.getInterruptRequest(IntrFlags::VBlank) && self.bus.getInterruptEnable(IntrFlags::VBlank) {
-
-                } else if self.bus.getInterruptRequest(IntrFlags::LCD) && self.bus.getInterruptEnable(IntrFlags::LCD) {
-
-                } else if self.bus.getInterruptRequest(IntrFlags::Timer) && self.bus.getInterruptEnable(IntrFlags::Timer) {
-                    self.bus.resetInterruptRequest(IntrFlags::Timer);
-                    self.masterInterrupt = false;
-                    self.halted = false;
-                    self.currentOpcode = 0xE4;
-                    self.cyclesLeft = 20;
-                    return;
-                } else if self.bus.getInterruptRequest(IntrFlags::Serial) && self.bus.getInterruptEnable(IntrFlags::Serial) {
-
-                } else if self.bus.getInterruptRequest(IntrFlags::Joypad) && self.bus.getInterruptEnable(IntrFlags::Joypad) {
-
-                }
-            }
+            self.handleInterrupts();
+            
             
             self.currentOpcode = self.readByte(self.pc);
             let (_, _, cycles) = self.getInstructionInfo(self.currentOpcode);
