@@ -12,7 +12,7 @@ pub struct Z80{
     pub sp: u16,
     pub pc: u16,
 
-    bus: Bus,
+    pub bus: Bus,
     pub cyclesLeft: u8,
     fetched: u8,
     fetchedSigned: i8,
@@ -23,7 +23,7 @@ pub struct Z80{
     branchTaken: bool,
     justBooted: bool,
     halted: bool,
-    masterInterrupt: bool
+    masterInterrupt: bool,
 }
 
 pub enum Flags {
@@ -237,8 +237,8 @@ impl Z80 {
         match self.cyclesLeft {
             16 => {},
             12 => {},
-            8 => {self.pc = (self.POP8() as u16) << 8; self.pc |= self.POP8() as u16},
-            4 => {self.masterInterrupt = true;},
+            8 => {self.masterInterrupt = true},
+            4 => {self.pc = (self.POP8() as u16) << 8; self.pc |= self.POP8() as u16},
             _ => {}
         }
     }
@@ -2123,9 +2123,9 @@ impl Z80 {
             },
             0x86 => { // RES (HL),0
                 match self.cyclesLeft {
-                    3 => {},
-                    2 => {self.fetched = self.RES(self.readByte(self.getHL()), 0)},
-                    1 => {self.writeByte(self.getHL(), self.fetched)},
+                    12 => {},
+                    8 => {self.fetched = self.RES(self.readByte(self.getHL()), 0)},
+                    4 => {self.writeByte(self.getHL(), self.fetched)},
                     _ => {}
                 }
             },
@@ -2152,9 +2152,9 @@ impl Z80 {
             },
             0x8E => { // RES (HL),1
                 match self.cyclesLeft {
-                    3 => {},
-                    2 => {self.fetched = self.RES(self.readByte(self.getHL()), 1)},
-                    1 => {self.writeByte(self.getHL(), self.fetched)},
+                    12 => {},
+                    8 => {self.fetched = self.RES(self.readByte(self.getHL()), 1)},
+                    4 => {self.writeByte(self.getHL(), self.fetched)},
                     _ => {}
                 }
             },
@@ -2182,9 +2182,9 @@ impl Z80 {
             },
             0x96 => { // RES (HL),2
                 match self.cyclesLeft {
-                    3 => {},
-                    2 => {self.fetched = self.RES(self.readByte(self.getHL()), 2)},
-                    1 => {self.writeByte(self.getHL(), self.fetched)},
+                    12 => {},
+                    8 => {self.fetched = self.RES(self.readByte(self.getHL()), 2)},
+                    4 => {self.writeByte(self.getHL(), self.fetched)},
                     _ => {}
                 }
             },
@@ -2211,9 +2211,9 @@ impl Z80 {
             },
             0x9E => { // RES (HL),3
                 match self.cyclesLeft {
-                    3 => {},
-                    2 => {self.fetched = self.RES(self.readByte(self.getHL()), 3)},
-                    1 => {self.writeByte(self.getHL(), self.fetched)},
+                    12 => {},
+                    8 => {self.fetched = self.RES(self.readByte(self.getHL()), 3)},
+                    4 => {self.writeByte(self.getHL(), self.fetched)},
                     _ => {}
                 }
             },
@@ -2241,9 +2241,9 @@ impl Z80 {
             },
             0xA6 => { // RES (HL),4
                 match self.cyclesLeft {
-                    3 => {},
-                    2 => {self.fetched = self.RES(self.readByte(self.getHL()), 4)},
-                    1 => {self.writeByte(self.getHL(), self.fetched)},
+                    12 => {},
+                    8 => {self.fetched = self.RES(self.readByte(self.getHL()), 4)},
+                    4 => {self.writeByte(self.getHL(), self.fetched)},
                     _ => {}
                 }
             },
@@ -2270,9 +2270,9 @@ impl Z80 {
             },
             0xAE => { // RES (HL),5
                 match self.cyclesLeft {
-                    3 => {},
-                    2 => {self.fetched = self.RES(self.readByte(self.getHL()), 5)},
-                    1 => {self.writeByte(self.getHL(), self.fetched)},
+                    12 => {},
+                    8 => {self.fetched = self.RES(self.readByte(self.getHL()), 5)},
+                    4 => {self.writeByte(self.getHL(), self.fetched)},
                     _ => {}
                 }
             },
@@ -2300,9 +2300,9 @@ impl Z80 {
             },
             0xB6 => { // RES (HL),6
                 match self.cyclesLeft {
-                    3 => {},
-                    2 => {self.fetched = self.RES(self.readByte(self.getHL()), 6)},
-                    1 => {self.writeByte(self.getHL(), self.fetched)},
+                    12 => {},
+                    8 => {self.fetched = self.RES(self.readByte(self.getHL()), 6)},
+                    4 => {self.writeByte(self.getHL(), self.fetched)},
                     _ => {}
                 }
             },
@@ -2329,9 +2329,9 @@ impl Z80 {
             },
             0xBE => { // RES (HL),7
                 match self.cyclesLeft {
-                    3 => {},
-                    2 => {self.fetched = self.RES(self.readByte(self.getHL()), 7)},
-                    1 => {self.writeByte(self.getHL(), self.fetched)},
+                    12 => {},
+                    8 => {self.fetched = self.RES(self.readByte(self.getHL()), 7)},
+                    4 => {self.writeByte(self.getHL(), self.fetched)},
                     _ => {}
                 }
             },
@@ -2359,9 +2359,9 @@ impl Z80 {
             },
             0xC6 => { // SET (HL),0
                 match self.cyclesLeft {
-                    3 => {},
-                    2 => {self.fetched = self.SET(self.readByte(self.getHL()), 0)},
-                    1 => {self.writeByte(self.getHL(), self.fetched)},
+                    12 => {},
+                    8 => {self.fetched = self.SET(self.readByte(self.getHL()), 0)},
+                    4 => {self.writeByte(self.getHL(), self.fetched)},
                     _ => {}
                 }
             },
@@ -2388,9 +2388,9 @@ impl Z80 {
             },
             0xCE => { // SET (HL),1
                 match self.cyclesLeft {
-                    3 => {},
-                    2 => {self.fetched = self.SET(self.readByte(self.getHL()), 1)},
-                    1 => {self.writeByte(self.getHL(), self.fetched)},
+                    12 => {},
+                    8 => {self.fetched = self.SET(self.readByte(self.getHL()), 1)},
+                    4 => {self.writeByte(self.getHL(), self.fetched)},
                     _ => {}
                 }
             },
@@ -2418,9 +2418,9 @@ impl Z80 {
             },
             0xD6 => { // SET (HL),2
                 match self.cyclesLeft {
-                    3 => {},
-                    2 => {self.fetched = self.SET(self.readByte(self.getHL()), 2)},
-                    1 => {self.writeByte(self.getHL(), self.fetched)},
+                    12 => {},
+                    8 => {self.fetched = self.SET(self.readByte(self.getHL()), 2)},
+                    4 => {self.writeByte(self.getHL(), self.fetched)},
                     _ => {}
                 }
             },
@@ -2447,9 +2447,9 @@ impl Z80 {
             },
             0xDE => { // SET (HL),3
                 match self.cyclesLeft {
-                    3 => {},
-                    2 => {self.fetched = self.SET(self.readByte(self.getHL()), 3)},
-                    1 => {self.writeByte(self.getHL(), self.fetched)},
+                    12 => {},
+                    8 => {self.fetched = self.SET(self.readByte(self.getHL()), 3)},
+                    4 => {self.writeByte(self.getHL(), self.fetched)},
                     _ => {}
                 }
             },
@@ -2477,9 +2477,9 @@ impl Z80 {
             },
             0xE6 => { // SET (HL),4
                 match self.cyclesLeft {
-                    3 => {},
-                    2 => {self.fetched = self.SET(self.readByte(self.getHL()), 4)},
-                    1 => {self.writeByte(self.getHL(), self.fetched)},
+                    12 => {},
+                    8 => {self.fetched = self.SET(self.readByte(self.getHL()), 4)},
+                    4 => {self.writeByte(self.getHL(), self.fetched)},
                     _ => {}
                 }
             },
@@ -2506,9 +2506,9 @@ impl Z80 {
             },
             0xEE => { // SET (HL),5
                 match self.cyclesLeft {
-                    3 => {},
-                    2 => {self.fetched = self.SET(self.readByte(self.getHL()), 5)},
-                    1 => {self.writeByte(self.getHL(), self.fetched)},
+                    12 => {},
+                    8 => {self.fetched = self.SET(self.readByte(self.getHL()), 5)},
+                    4 => {self.writeByte(self.getHL(), self.fetched)},
                     _ => {}
                 }
             },
@@ -2536,9 +2536,9 @@ impl Z80 {
             },
             0xF6 => { // SET (HL),6
                 match self.cyclesLeft {
-                    3 => {},
-                    2 => {self.fetched = self.SET(self.readByte(self.getHL()), 6)},
-                    1 => {self.writeByte(self.getHL(), self.fetched)},
+                    12 => {},
+                    8 => {self.fetched = self.SET(self.readByte(self.getHL()), 6)},
+                    4 => {self.writeByte(self.getHL(), self.fetched)},
                     _ => {}
                 }
             },
@@ -2565,9 +2565,9 @@ impl Z80 {
             },
             0xFE => { // RES (HL),7
                 match self.cyclesLeft {
-                    3 => {},
-                    2 => {self.fetched = self.SET(self.readByte(self.getHL()), 7)},
-                    1 => {self.writeByte(self.getHL(), self.fetched)},
+                    12 => {},
+                    8 => {self.fetched = self.SET(self.readByte(self.getHL()), 7)},
+                    4 => {self.writeByte(self.getHL(), self.fetched)},
                     _ => {}
                 }
             },
@@ -2585,8 +2585,6 @@ impl Z80 {
         } else {
             self.unprefixedOpcodes(opcode);
         }
-        
-        self.cyclesLeft -= 1;
     }
 
     fn getInstructionInfo(&self, opcode: u8) -> (&str, u8, u8) {
@@ -2608,6 +2606,8 @@ impl Z80 {
             self.justBooted = false;
         }
         self.executeOneCycle(self.currentOpcode);
+        self.cyclesLeft -= 1;
+        self.bus.incrTimers();
 
         if self.cyclesLeft == 0 {
             let (_, length, _) = self.getInstructionInfo(self.currentOpcode);

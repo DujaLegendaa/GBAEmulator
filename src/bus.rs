@@ -1,9 +1,20 @@
+use super::bit;
 pub struct Bus {
     ram1: [u8; 4 * 1024],
     ram2: [u8; 4 * 1024],
     highRam: [u8; 127],
 
     interruptRegister: u8,
+    pub divRegister: u16,
+    pub timaRegister: u8,
+    pub tmaRegister: u8,
+    pub tacRegister: u8,
+    lastCycleBit: bool,
+
+    timerOverflowDelay: u8,
+    timaOverflow: bool,
+    oldTMA: u8,
+    tmaWriteCycle: bool,
 }
 
 impl Bus {
@@ -14,6 +25,16 @@ impl Bus {
             highRam: [0; 127],
 
             interruptRegister: 0,
+            divRegister: 0,
+            timaRegister: 0,
+            tacRegister: 0,
+            tmaRegister: 0,
+            lastCycleBit: false,
+
+            timerOverflowDelay: 0,
+            timaOverflow: false,
+            oldTMA: 0,
+            tmaWriteCycle: false,
         }
     }
 
@@ -48,7 +69,14 @@ impl Bus {
                 match addr & 0x00FF {
                     0x00 => {todo!("Controller not implemented")},
                     0x01..= 0x02 => {todo!("Communication not implemented")},
-                    0x04..= 0x07 => {todo!("Divider and Timer not implemented")},
+                    0x04..= 0x07 => {
+                        match addr & 0x000F {
+                            0x4 => {((self.divRegister & 0xFF00) >> 8) as u8},
+                            0x5 => {self.timaRegister},
+                            0x6 => {self.tmaRegister},
+                            0x7 => {self.tacRegister},
+                            _ => {0}
+                        }},
                     0x10..= 0x26 => {/* Sound, not implementing*/0},
                     0x30..= 0x3F => {/* Waveform RAM, not implementing*/0},
                     0x40..= 0x4B => {todo!("LCD register not implemented")},
@@ -100,7 +128,22 @@ impl Bus {
                 match addr & 0x00FF {
                     0x00 => {todo!("Controller not implemented")},
                     0x01..= 0x02 => {todo!("Communication not implemented")},
-                    0x04..= 0x07 => {todo!("Divider and Timer not implemented")},
+                    0x04..= 0x07 => {
+                        match addr & 0x000F {
+                            0x4 => {self.divRegister = 0},
+                            0x5 => {
+                                self.timaRegister = data;
+                                self.timaOverflow = false;
+                                self.timerOverflowDelay = 0;
+                            },
+                            0x6 => {
+                                self.oldTMA = self.tmaRegister;
+                                self.tmaWriteCycle = true;
+                                self.tmaRegister = data
+                            },
+                            0x7 => {self.tacRegister = data},
+                            _ => {}
+                        }},
                     0x10..= 0x26 => {/* Sound, not implementing*/},
                     0x30..= 0x3F => {/* Waveform RAM, not implementing*/},
                     0x40..= 0x4B => {todo!("LCD register not implemented")},
@@ -119,6 +162,39 @@ impl Bus {
                 self.interruptRegister = data;
             }
         }
+    }
+    pub fn incrTimers(&mut self) {
+        self.divRegister = self.divRegister.wrapping_add(1);
+        if self.timaOverflow {
+            self.timerOverflowDelay = (self.timerOverflowDelay + 1) & 0x4;
+            if self.timerOverflowDelay == 4 {
+                if self.tmaWriteCycle {
+                    self.timaRegister = self.oldTMA;
+                } else {
+                    self.timaRegister = self.tmaRegister;
+                }
+                self.timaOverflow = false;
+            }
+        }
+        let mut timaBit = false;
+        let timerEnable = bit::get(self.tacRegister, 2);
+        match self.tacRegister & 0b11 {
+            0b00 => {timaBit = bit::get16(self.divRegister, 9)},
+            0b01 => {timaBit = bit::get16(self.divRegister, 3)},
+            0b10 => {timaBit = bit::get16(self.divRegister, 5)},
+            0b11 => {timaBit = bit::get16(self.divRegister, 7)},
+            _ => {}
+        }
+        let currentCycleBit = timaBit && timerEnable;
+
+        if currentCycleBit && !self.lastCycleBit {
+            let (r, overflow) = self.timaRegister.overflowing_add(1);
+            self.timaOverflow = overflow;
+            self.timaRegister = r;
+        }
+
+        self.lastCycleBit = timaBit && timerEnable;
+        self.tmaWriteCycle = false;
     }
 }
 

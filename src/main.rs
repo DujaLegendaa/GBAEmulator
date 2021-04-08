@@ -21,6 +21,8 @@ fn main() {
 
     c.pc = 0xC000;
 
+    c.writeByte(0xFF07, 0b101);
+
     c.writeByte(0xC000, 0x01);
     c.writeByte(0xC001, 0xff);
     c.writeByte(0xC002, 0x01);
