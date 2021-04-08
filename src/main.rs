@@ -20,8 +20,11 @@ fn main() {
     let mut c = cpu::Z80::new();
 
     c.pc = 0xC000;
+    c.sp = 0xC010;
 
     c.writeByte(0xFF07, 0b101);
+    c.writeByte(0xFF05, 250);
+    c.writeByte(0xFF06, 250);
 
     c.writeByte(0xC000, 0x01);
     c.writeByte(0xC001, 0xff);

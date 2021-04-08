@@ -4,7 +4,8 @@ pub struct Bus {
     ram2: [u8; 4 * 1024],
     highRam: [u8; 127],
 
-    interruptRegister: u8,
+    pub interruptEnableRegister: u8,
+    pub interruptRequestRegister: u8,
     pub divRegister: u16,
     pub timaRegister: u8,
     pub tmaRegister: u8,
@@ -17,6 +18,14 @@ pub struct Bus {
     tmaWriteCycle: bool,
 }
 
+pub enum IntrFlags {
+    VBlank = 0,
+    LCD = 1,
+    Timer = 2,
+    Serial = 3,
+    Joypad = 4
+}
+
 impl Bus {
     pub fn new() -> Self {
         Self {
@@ -24,7 +33,8 @@ impl Bus {
             ram2: [0; 4 * 1024],
             highRam: [0; 127],
 
-            interruptRegister: 0,
+            interruptEnableRegister: 0xFF,
+            interruptRequestRegister: 0,
             divRegister: 0,
             timaRegister: 0,
             tacRegister: 0,
@@ -77,6 +87,7 @@ impl Bus {
                             0x7 => {self.tacRegister},
                             _ => {0}
                         }},
+                    0x0F => {self.interruptRequestRegister},
                     0x10..= 0x26 => {/* Sound, not implementing*/0},
                     0x30..= 0x3F => {/* Waveform RAM, not implementing*/0},
                     0x40..= 0x4B => {todo!("LCD register not implemented")},
@@ -92,7 +103,7 @@ impl Bus {
                 self.highRam[((addr & 0x00ff) - 0x0080) as usize]
             },
             0xFFFF => {
-                self.interruptRegister
+                self.interruptEnableRegister
             }
         }
     }
@@ -144,6 +155,7 @@ impl Bus {
                             0x7 => {self.tacRegister = data},
                             _ => {}
                         }},
+                    0x0F => {self.interruptRequestRegister = data},
                     0x10..= 0x26 => {/* Sound, not implementing*/},
                     0x30..= 0x3F => {/* Waveform RAM, not implementing*/},
                     0x40..= 0x4B => {todo!("LCD register not implemented")},
@@ -159,14 +171,31 @@ impl Bus {
                 self.highRam[((addr & 0x00ff) - 0x0080) as usize] = data;
             },
             0xFFFF => {
-                self.interruptRegister = data;
+                self.interruptEnableRegister = data;
             }
         }
     }
+
+    fn requestInterrupt(&mut self, i: IntrFlags) {
+        self.interruptRequestRegister = bit::set(self.interruptRequestRegister, i as usize);
+    }
+
+    pub fn getInterruptRequest(&self, i: IntrFlags) -> bool {
+        bit::get(self.interruptRequestRegister, i as usize)
+    }
+
+    pub fn resetInterruptRequest(&mut self, i: IntrFlags) {
+        self.interruptRequestRegister = bit::clr(self.interruptRequestRegister, i as usize);
+    }
+
+    pub fn getInterruptEnable(&self, i: IntrFlags) -> bool{
+        bit::get(self.interruptEnableRegister, i as usize)
+    }
+
     pub fn incrTimers(&mut self) {
         self.divRegister = self.divRegister.wrapping_add(1);
         if self.timaOverflow {
-            self.timerOverflowDelay = (self.timerOverflowDelay + 1) & 0x4;
+            self.timerOverflowDelay = (self.timerOverflowDelay + 1) % 5;
             if self.timerOverflowDelay == 4 {
                 if self.tmaWriteCycle {
                     self.timaRegister = self.oldTMA;
@@ -174,6 +203,7 @@ impl Bus {
                     self.timaRegister = self.tmaRegister;
                 }
                 self.timaOverflow = false;
+                self.requestInterrupt(IntrFlags::Timer);
             }
         }
         let mut timaBit = false;

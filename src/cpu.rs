@@ -1,5 +1,5 @@
 use super::bit;
-use super::bus::{Bus};
+use super::bus::{Bus, IntrFlags};
 pub struct Z80{
     pub a: u8,
     pub f: u8,
@@ -64,7 +64,7 @@ impl Z80{
             branchTaken: false,
             justBooted: true,
             halted: false,
-            masterInterrupt: false,
+            masterInterrupt: true,
         }
     }
 
@@ -221,6 +221,16 @@ impl Z80 {
         self.writeByte(self.sp, d);
     }
 
+    fn INT(&mut self, addr: u16) {
+        match self.cyclesLeft {
+            20 => {},
+            16 => {},
+            12 => {self.PUSH8(self.pc as u8)},
+            8 => {self.PUSH8((self.pc >> 8) as u8)},
+            4 => {self.pc = addr},
+            _ => {},
+        }
+    }
     // mozda problemi oko sajkla ali sumnjam
     fn RET_CONDITIAL(&mut self, condition: bool) {
         match self.cyclesLeft {
@@ -1428,6 +1438,9 @@ impl Z80 {
             0xD2 => { // JP NC,u16
                 self.JP_CONDITIAL(!self.getFlag(Flags::Carry), self.readBytes(self.pc + 1));
             },
+            0xD3 => { // INT 0x40
+                self.INT(0x40);
+            }
             0xD4 => { // CALL NC,u16
                 self.CALL_CONDITIONAL(!self.getFlag(Flags::Carry), self.readBytes(self.pc + 1))
             },
@@ -1459,7 +1472,10 @@ impl Z80 {
             0xDA => { // JP C,u16
                 self.JP_CONDITIAL(self.getFlag(Flags::Carry), self.readBytes(self.pc + 1));
             },
-            0xDB => { // CALL C,u16
+            0xDB => { // INT 0x60
+                self.INT(0x60);
+            }
+            0xDC => { // CALL C,u16
                 self.CALL_CONDITIONAL(self.getFlag(Flags::Carry), self.readBytes(self.pc + 1))
             },
             0xDE => { // SBC A,u8
@@ -1496,6 +1512,12 @@ impl Z80 {
                     _ => {}
                 }
             },
+            0xE3 => { // INT 0x48
+                self.INT(0x48);
+            },
+            0xE4 => { // INT 0x50
+                self.INT(0x50);
+            }
             0xE5 => { // PUSH HL
                 match self.cyclesLeft {
                     16 => {},
@@ -1574,6 +1596,9 @@ impl Z80 {
             0xF3 => { // DI 
                 self.masterInterrupt = false;
             },
+            0xF4 => { // INT 0x58
+                self.INT(0x58);
+            }
             0xF5 => { // PUSH AF
                 match self.cyclesLeft {
                     16 => {},
@@ -2615,6 +2640,25 @@ impl Z80 {
                 self.pc = self.pc.wrapping_add(length as u16);
             }
             self.branchTaken = false;
+
+            // brateee testirati sve ovo ako je instrukcija prefiksovana ili nesto
+            if self.masterInterrupt && !self.cbFlag{
+                if self.bus.getInterruptRequest(IntrFlags::VBlank) && self.bus.getInterruptEnable(IntrFlags::VBlank) {
+
+                } else if self.bus.getInterruptRequest(IntrFlags::LCD) && self.bus.getInterruptEnable(IntrFlags::LCD) {
+
+                } else if self.bus.getInterruptRequest(IntrFlags::Timer) && self.bus.getInterruptEnable(IntrFlags::Timer) {
+                    self.bus.resetInterruptRequest(IntrFlags::Timer);
+                    self.masterInterrupt = false;
+                    self.currentOpcode = 0xE4;
+                    self.cyclesLeft = 20;
+                    return;
+                } else if self.bus.getInterruptRequest(IntrFlags::Serial) && self.bus.getInterruptEnable(IntrFlags::Serial) {
+
+                } else if self.bus.getInterruptRequest(IntrFlags::Joypad) && self.bus.getInterruptEnable(IntrFlags::Joypad) {
+
+                }
+            }
             
             self.currentOpcode = self.readByte(self.pc);
             let (_, _, cycles) = self.getInstructionInfo(self.currentOpcode);
@@ -2637,9 +2681,9 @@ pub const UNPREFIXED_INSTRUCTION_TABLE: [(&str, u8, u8); 256]= [
     ("AND A,B", 1, 1),          ("AND A,C", 1, 1),      ("AND A,D", 1, 1),          ("AND A,E", 1, 1),      ("AND A,H", 1, 1),      ("AND A,L", 1, 1),      ("AND A,(HL)", 1, 2),   ("AND A,A", 1, 1),      ("XOR A,B", 1, 1),      ("XOR A,C", 1, 1),      ("XOR A,D", 1, 1),      ("XOR A,E", 1, 1),  ("XOR A,H", 1, 1),      ("XOR A,L", 1, 1),  ("XOR A,(HL)", 1, 2),   ("XOR A,A", 1, 1),
     ("OR A,B", 1, 1),           ("OR A,C", 1, 1),       ("OR A,D", 1, 1),           ("OR A,E", 1, 1),       ("OR A,H", 1, 1),       ("OR A,L", 1, 1),       ("OR A,(HL)", 1, 2),    ("OR A,A", 1, 1),       ("CP A,B", 1, 1),       ("CP A,C", 1, 1),       ("CP A,D", 1, 1),       ("CP A,E", 1, 1),   ("CP A,H", 1, 1),       ("CP A,L", 1, 1),   ("CP A,(HL)", 1, 2),    ("CP A,A", 1, 1),
     ("RET NZ", 1, 5),           ("POP BC", 1, 3),       ("JP NZ,u16", 3, 4),        ("JP u16", 3, 4),       ("CALL NZ,u16", 3, 6),  ("PUSH BC", 1, 4),      ("ADD A,u8", 2, 2),     ("RST 0x00", 1, 4),     ("RET Z", 1, 5),        ("RET", 1, 4),          ("JP Z,u16", 3, 4),     ("CB", 1, 1),       ("CALL Z,u16", 3, 6),   ("CALL u16", 3, 6), ("ADC A,u8", 2, 2),     ("RST 0x08", 1, 4),
-    ("RET NC", 1, 5),           ("POP DE", 1, 3),       ("JP NC,u16", 3, 4),        ("", 0, 0),             ("CALL NC,u16", 3, 6),  ("PUSH DE", 1, 4),      ("SUB A,u8", 2, 2),     ("RST 0x10", 1, 4),     ("RET C", 1, 5),        ("RETI", 1, 4),         ("JP C,u16", 3, 4),     ("", 0, 0),         ("CALL C,u16", 3, 6),   ("", 0, 0),         ("SBC A,u8", 2, 2),     ("RST 0x18", 1, 4),
-    ("LD (0xFF00+u8),A", 2, 3), ("POP HL", 1, 3),       ("LD (0xFF00+C),A", 1, 2),  ("", 0, 0),             ("", 0, 0),             ("PUSH HL", 1, 4),      ("AND A,u8", 2, 2),     ("RST 0x20", 1, 4),     ("ADD SP,i8", 2, 4),    ("JP HL", 1, 1),        ("LD (u16),A", 3, 4),   ("", 0, 0),         ("", 0, 0),             ("", 0, 0),         ("XOR A,u8", 2, 2),     ("RST 0x28", 1, 4),
-    ("LD A,(0xFF00+u8)", 2, 3), ("POP AF", 1, 3),       ("LD A,(0xFF00+C)", 1, 2),  ("DI", 1, 1),           ("", 0, 0),             ("PUSH AF", 1, 4),      ("OR A,u8", 2, 2),      ("RST 0x30", 1, 4),     ("LD HL,SP+i8", 2, 3),  ("LD SP,HL", 1, 2),     ("LD A,(u16)", 3, 4),   ("EI", 1, 1),       ("", 0, 0),             ("", 0, 0),         ("CP A,u8", 2, 2),      ("RST 0x38", 1, 4),
+    ("RET NC", 1, 5),           ("POP DE", 1, 3),       ("JP NC,u16", 3, 4),        ("INT 0x40", 0, 0),     ("CALL NC,u16", 3, 6),  ("PUSH DE", 1, 4),      ("SUB A,u8", 2, 2),     ("RST 0x10", 1, 4),     ("RET C", 1, 5),        ("RETI", 1, 4),         ("JP C,u16", 3, 4),     ("INT 0x60", 0, 0), ("CALL C,u16", 3, 6),   ("", 0, 0),         ("SBC A,u8", 2, 2),     ("RST 0x18", 1, 4),
+    ("LD (0xFF00+u8),A", 2, 3), ("POP HL", 1, 3),       ("LD (0xFF00+C),A", 1, 2),  ("INT 0x48", 0, 0),     ("INT 0x50", 0, 0),     ("PUSH HL", 1, 4),      ("AND A,u8", 2, 2),     ("RST 0x20", 1, 4),     ("ADD SP,i8", 2, 4),    ("JP HL", 1, 1),        ("LD (u16),A", 3, 4),   ("", 0, 0),         ("", 0, 0),             ("", 0, 0),         ("XOR A,u8", 2, 2),     ("RST 0x28", 1, 4),
+    ("LD A,(0xFF00+u8)", 2, 3), ("POP AF", 1, 3),       ("LD A,(0xFF00+C)", 1, 2),  ("DI", 1, 1),           ("INT 0x58", 0, 0),     ("PUSH AF", 1, 4),      ("OR A,u8", 2, 2),      ("RST 0x30", 1, 4),     ("LD HL,SP+i8", 2, 3),  ("LD SP,HL", 1, 2),     ("LD A,(u16)", 3, 4),   ("EI", 1, 1),       ("", 0, 0),             ("", 0, 0),         ("CP A,u8", 2, 2),      ("RST 0x38", 1, 4),
 ];
 
 
