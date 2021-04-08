@@ -64,7 +64,7 @@ impl Z80{
             branchTaken: false,
             justBooted: true,
             halted: false,
-            masterInterrupt: true,
+            masterInterrupt: false,
         }
     }
 
@@ -2621,18 +2621,17 @@ impl Z80 {
     }
 
     pub fn clock(&mut self) {
-        if self.halted {
-            return;
-        }
         if self.justBooted {
             self.currentOpcode = self.readByte(self.pc);
             let (_, _, cycles) = self.getInstructionInfo(self.currentOpcode);
             self.cyclesLeft = cycles * 4;
             self.justBooted = false;
         }
-        self.executeOneCycle(self.currentOpcode);
-        self.cyclesLeft -= 1;
-        self.bus.incrTimers();
+        if !self.halted {
+            self.executeOneCycle(self.currentOpcode);
+            self.cyclesLeft -= 1;
+            self.bus.incrTimers();
+        }
 
         if self.cyclesLeft == 0 {
             let (_, length, _) = self.getInstructionInfo(self.currentOpcode);
@@ -2650,6 +2649,7 @@ impl Z80 {
                 } else if self.bus.getInterruptRequest(IntrFlags::Timer) && self.bus.getInterruptEnable(IntrFlags::Timer) {
                     self.bus.resetInterruptRequest(IntrFlags::Timer);
                     self.masterInterrupt = false;
+                    self.halted = false;
                     self.currentOpcode = 0xE4;
                     self.cyclesLeft = 20;
                     return;

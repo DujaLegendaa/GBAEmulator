@@ -33,7 +33,7 @@ impl Bus {
             ram2: [0; 4 * 1024],
             highRam: [0; 127],
 
-            interruptEnableRegister: 0xFF,
+            interruptEnableRegister: 0,
             interruptRequestRegister: 0,
             divRegister: 0,
             timaRegister: 0,
