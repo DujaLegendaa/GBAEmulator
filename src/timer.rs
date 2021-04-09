@@ -64,4 +64,16 @@ impl Timers {
         self.tmaWriteCycle = false;
         interruptRequest
     }
+
+    pub fn tmaWrite(&mut self, data: u8) {
+        self.oldTMA = self.tmaRegister;
+        self.tmaWriteCycle = true;
+        self.tmaRegister = data
+    }
+
+    pub fn timaWrite(&mut self, data: u8) {
+        self.timaRegister = data;
+        self.timaOverflow = false;
+        self.timerOverflowDelay = 0;
+    }
 }
