@@ -39,12 +39,8 @@ impl Bus {
                 todo!("Vram not implemented")
             },
             0xA000..= 0xBFFF => {todo!("Needs cartridge and mapper implementation")},
-            0xC000..= 0xCFFF => {
-                self.ram1[(addr & 0x0fff) as usize]
-            },
-            0xD000..= 0xDFFF => {
-                self.ram2[(addr & 0x0fff) as usize]
-            },
+            0xC000..= 0xCFFF => {self.ram1[(addr & 0x0fff) as usize]},
+            0xD000..= 0xDFFF => {self.ram2[(addr & 0x0fff) as usize]},
             0xE000..= 0xFDFF => {
                 if addr <= 0xEFFF {
                     self.ram1[(addr & 0x0fff) as usize]
@@ -125,16 +121,8 @@ impl Bus {
                     0x04..= 0x07 => {
                         match addr & 0x000F {
                             0x4 => {self.timerRegisters.divRegister = 0},
-                            0x5 => {
-                                self.timerRegisters.timaRegister = data;
-                                self.timerRegisters.timaOverflow = false;
-                                self.timerRegisters.timerOverflowDelay = 0;
-                            },
-                            0x6 => {
-                                self.timerRegisters.oldTMA = self.timerRegisters.tmaRegister;
-                                self.timerRegisters.tmaWriteCycle = true;
-                                self.timerRegisters.tmaRegister = data
-                            },
+                            0x5 => {self.timerRegisters.timaWrite(data);},
+                            0x6 => {self.timerRegisters.tmaWrite(data)},
                             0x7 => {self.timerRegisters.tacRegister = data},
                             _ => {}
                         }},
