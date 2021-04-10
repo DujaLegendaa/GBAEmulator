@@ -1,9 +1,12 @@
 use super::bit;
 use super::timer::{Timers};
+use super::cartridge::{Cartridge};
 pub struct Bus {
     ram1: [u8; 4 * 1024],
     ram2: [u8; 4 * 1024],
     highRam: [u8; 127],
+
+    cart: Option<Cartridge>,
 
     pub interruptEnableRegister: u8,
     pub interruptRequestRegister: u8,
@@ -25,20 +28,41 @@ impl Bus {
             ram2: [0; 4 * 1024],
             highRam: [0; 127],
 
+            cart: None,
+
             interruptEnableRegister: 0,
             interruptRequestRegister: 0,
             timerRegisters: Timers::new(),
         }
     }
 
+    pub fn insertCartridge(&mut self, c: Cartridge) {
+        self.cart = Some(c);
+    } 
+
     pub fn cpuRead(&self, addr: u16) -> u8 {
         match addr {
-            0x0000..= 0x3FFF => {todo!("Needs cartridge implementation")},
-            0x4000..= 0x7FFF => {todo!("Needs cartridge and mapper implementation")},
+            0x0000..= 0x3FFF => {
+                match &self.cart {
+                    Some(x) => x.readRom(addr),
+                    None => panic!("Cartridge not inserted"),
+                }
+            },
+            0x4000..= 0x7FFF => {
+                match &self.cart {
+                    Some(x) => x.readRom(addr),
+                    None => panic!("Cartridge not inserted"),
+                }
+            },
             0x8000..= 0x9FFF => {
                 todo!("Vram not implemented")
             },
-            0xA000..= 0xBFFF => {todo!("Needs cartridge and mapper implementation")},
+            0xA000..= 0xBFFF => {
+                match &self.cart {
+                    Some(x) => x.readRam(addr),
+                    None => panic!("Cartridge not inserted"),
+                }
+            },
             0xC000..= 0xCFFF => {self.ram1[(addr & 0x0fff) as usize]},
             0xD000..= 0xDFFF => {self.ram2[(addr & 0x0fff) as usize]},
             0xE000..= 0xFDFF => {
@@ -94,7 +118,12 @@ impl Bus {
             0x8000..= 0x9FFF => {
                 todo!("Vram not implemented")
             },
-            0xA000..= 0xBFFF => {todo!("Needs cartridge and mapper implementation")},
+            0xA000..= 0xBFFF => {
+                match &mut self.cart {
+                    Some(x) => x.writeRam(addr, data),
+                    None => panic!("Cartridge not inserted"),
+                }
+            },
             0xC000..= 0xCFFF => {
                 self.ram1[(addr & 0x0fff) as usize] = data;
             },
