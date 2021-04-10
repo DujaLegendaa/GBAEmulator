@@ -2649,11 +2649,12 @@ impl Z80 {
             self.justBooted = false;
         }
         if !self.halted {
+            for _i in 0..4 {
             self.executeOneCycle(self.currentOpcode);
             self.cyclesLeft -= 1;
             if self.bus.timerRegisters.incrTimers() {
                 self.bus.requestInterrupt(IntrFlags::Timer);
-            }
+            }}
         }
 
         if self.cyclesLeft == 0 {
@@ -2672,13 +2673,22 @@ impl Z80 {
             self.cyclesLeft = cycles * 4;
         }
     }
+
+    pub fn reset(&mut self) {
+        self.setAF(0x01B0);
+        self.setBC(0x0013);
+        self.setDE(0x00D8);
+        self.setHL(0x014D);
+        self.sp = 0xFFFE;
+
+    }
 }
 
 pub const UNPREFIXED_INSTRUCTION_TABLE: [(&str, u8, u8); 256]= [
     ("NOP", 1, 1),              ("LD BC,u16", 3, 3),    ("LD (BC), A", 1, 2),       ("INC BC", 1, 2),       ("INC B", 1, 1),        ("DEC B", 1, 1),        ("LD B,u8", 2, 2),      ("RLCA", 1, 1),         ("LD (u16),SP", 3, 5),  ("ADD HL,BC", 1, 2),    ("LD A,(BC)", 1, 2),    ("DEC BC", 1, 2),   ("INC C", 1, 1),        ("DEC C", 1, 1),    ("LD C,u8", 2, 2),      ("RRCA", 1, 1),
     ("STOP", 2, 1),             ("LD DE,u16", 3, 3),    ("LD (DE), A", 1, 2),       ("INC DE", 1, 2),       ("INC D", 1, 1),        ("DEC D", 1, 1),        ("LD D,u8", 2, 2),      ("RLA", 1, 1),          ("JR i8", 2, 3),        ("ADD HL,DE", 1, 2),    ("LD A,(DE)", 1, 2),    ("DEC DE", 1, 2),   ("INC E", 1, 1),        ("DEC E", 1, 1),    ("LD E,u8", 2, 2),      ("PRA", 1, 1),
-    ("", 0, 0),                 ("LD HL,16", 3, 3),     ("LD (HL++), A", 1, 2),     ("INC HL", 1, 2),       ("INC H", 1, 1),        ("DEC H", 1, 1),        ("LD H,u8", 2, 2),      ("DAA", 1, 1),          ("JR Z,i8", 2, 3),      ("ADD HL,HL", 1, 2),    ("LD A,(HL++)", 1, 2),  ("DEC HL", 1, 2),   ("INC L", 1, 1),        ("DEC L", 1, 1),    ("LD L,u8", 2, 2),      ("CPL", 1, 1),
-    ("", 0, 0),                 ("LD SP,16", 3, 3),     ("LD (HL--), A", 1, 2),     ("INC SP", 1, 2),       ("INC (HL)", 1, 3),     ("DEC (HL)", 1, 3),     ("LD (HL),u8", 2, 3),   ("SCF", 1, 1),          ("JR C,i8", 2, 3),      ("ADD HL,SP", 1, 2),    ("LD A,(HL--)", 1, 2),  ("DEC SP", 1, 2),   ("INC A", 1, 1),        ("DEC A", 1, 1),    ("LD A,u8", 2, 2),      ("CCF", 1, 1),
+    ("JR NZ,r8", 2, 12),        ("LD HL,16", 3, 3),     ("LD (HL++), A", 1, 2),     ("INC HL", 1, 2),       ("INC H", 1, 1),        ("DEC H", 1, 1),        ("LD H,u8", 2, 2),      ("DAA", 1, 1),          ("JR Z,i8", 2, 3),      ("ADD HL,HL", 1, 2),    ("LD A,(HL++)", 1, 2),  ("DEC HL", 1, 2),   ("INC L", 1, 1),        ("DEC L", 1, 1),    ("LD L,u8", 2, 2),      ("CPL", 1, 1),
+    ("JR NC,r8", 2, 12),        ("LD SP,16", 3, 3),     ("LD (HL--), A", 1, 2),     ("INC SP", 1, 2),       ("INC (HL)", 1, 3),     ("DEC (HL)", 1, 3),     ("LD (HL),u8", 2, 3),   ("SCF", 1, 1),          ("JR C,i8", 2, 3),      ("ADD HL,SP", 1, 2),    ("LD A,(HL--)", 1, 2),  ("DEC SP", 1, 2),   ("INC A", 1, 1),        ("DEC A", 1, 1),    ("LD A,u8", 2, 2),      ("CCF", 1, 1),
     ("LD B,B", 1, 1),           ("LD B,C", 1, 1),       ("LD B,D", 1, 1),           ("LD B,E", 1, 1),       ("LD B,H", 1, 1),       ("LD B,L", 1, 1),       ("LD B,(HL)", 1, 2),    ("LD B,A", 1, 1),       ("LD C,B", 1, 1),       ("LD C,C", 1, 1),       ("LD C,D", 1, 1),       ("LD C,E", 1, 1),   ("LD C,H", 1, 1),       ("LD C,L", 1, 1),   ("LD C,(HL)", 1, 2),    ("LD C,A", 1, 1),
     ("LD D,B", 1, 1),           ("LD D,C", 1, 1),       ("LD D,D", 1, 1),           ("LD D,E", 1, 1),       ("LD D,H", 1, 1),       ("LD D,L", 1, 1),       ("LD D,(HL)", 1, 2),    ("LD D,A", 1, 1),       ("LD E,B", 1, 1),       ("LD E,C", 1, 1),       ("LD E,D", 1, 1),       ("LD E,E", 1, 1),   ("LD E,H", 1, 1),       ("LD E,L", 1, 1),   ("LD E,(HL)", 1, 2),    ("LD E,A", 1, 1),
     ("LD H,B", 1, 1),           ("LD H,C", 1, 1),       ("LD H,D", 1, 1),           ("LD H,E", 1, 1),       ("LD H,H", 1, 1),       ("LD H,L", 1, 1),       ("LD H,(HL)", 1, 2),    ("LD H,A", 1, 1),       ("LD L,B", 1, 1),       ("LD L,C", 1, 1),       ("LD L,D", 1, 1),       ("LD L,E", 1, 1),   ("LD L,H", 1, 1),       ("LD L,L", 1, 1),   ("LD L,(HL)", 1, 2),    ("LD L,A", 1, 1),
@@ -2688,9 +2698,9 @@ pub const UNPREFIXED_INSTRUCTION_TABLE: [(&str, u8, u8); 256]= [
     ("AND A,B", 1, 1),          ("AND A,C", 1, 1),      ("AND A,D", 1, 1),          ("AND A,E", 1, 1),      ("AND A,H", 1, 1),      ("AND A,L", 1, 1),      ("AND A,(HL)", 1, 2),   ("AND A,A", 1, 1),      ("XOR A,B", 1, 1),      ("XOR A,C", 1, 1),      ("XOR A,D", 1, 1),      ("XOR A,E", 1, 1),  ("XOR A,H", 1, 1),      ("XOR A,L", 1, 1),  ("XOR A,(HL)", 1, 2),   ("XOR A,A", 1, 1),
     ("OR A,B", 1, 1),           ("OR A,C", 1, 1),       ("OR A,D", 1, 1),           ("OR A,E", 1, 1),       ("OR A,H", 1, 1),       ("OR A,L", 1, 1),       ("OR A,(HL)", 1, 2),    ("OR A,A", 1, 1),       ("CP A,B", 1, 1),       ("CP A,C", 1, 1),       ("CP A,D", 1, 1),       ("CP A,E", 1, 1),   ("CP A,H", 1, 1),       ("CP A,L", 1, 1),   ("CP A,(HL)", 1, 2),    ("CP A,A", 1, 1),
     ("RET NZ", 1, 5),           ("POP BC", 1, 3),       ("JP NZ,u16", 3, 4),        ("JP u16", 3, 4),       ("CALL NZ,u16", 3, 6),  ("PUSH BC", 1, 4),      ("ADD A,u8", 2, 2),     ("RST 0x00", 1, 4),     ("RET Z", 1, 5),        ("RET", 1, 4),          ("JP Z,u16", 3, 4),     ("CB", 1, 1),       ("CALL Z,u16", 3, 6),   ("CALL u16", 3, 6), ("ADC A,u8", 2, 2),     ("RST 0x08", 1, 4),
-    ("RET NC", 1, 5),           ("POP DE", 1, 3),       ("JP NC,u16", 3, 4),        ("INT 0x40", 0, 0),     ("CALL NC,u16", 3, 6),  ("PUSH DE", 1, 4),      ("SUB A,u8", 2, 2),     ("RST 0x10", 1, 4),     ("RET C", 1, 5),        ("RETI", 1, 4),         ("JP C,u16", 3, 4),     ("INT 0x60", 0, 0), ("CALL C,u16", 3, 6),   ("", 0, 0),         ("SBC A,u8", 2, 2),     ("RST 0x18", 1, 4),
-    ("LD (0xFF00+u8),A", 2, 3), ("POP HL", 1, 3),       ("LD (0xFF00+C),A", 1, 2),  ("INT 0x48", 0, 0),     ("INT 0x50", 0, 0),     ("PUSH HL", 1, 4),      ("AND A,u8", 2, 2),     ("RST 0x20", 1, 4),     ("ADD SP,i8", 2, 4),    ("JP HL", 1, 1),        ("LD (u16),A", 3, 4),   ("", 0, 0),         ("", 0, 0),             ("", 0, 0),         ("XOR A,u8", 2, 2),     ("RST 0x28", 1, 4),
-    ("LD A,(0xFF00+u8)", 2, 3), ("POP AF", 1, 3),       ("LD A,(0xFF00+C)", 1, 2),  ("DI", 1, 1),           ("INT 0x58", 0, 0),     ("PUSH AF", 1, 4),      ("OR A,u8", 2, 2),      ("RST 0x30", 1, 4),     ("LD HL,SP+i8", 2, 3),  ("LD SP,HL", 1, 2),     ("LD A,(u16)", 3, 4),   ("EI", 1, 1),       ("", 0, 0),             ("", 0, 0),         ("CP A,u8", 2, 2),      ("RST 0x38", 1, 4),
+    ("RET NC", 1, 5),           ("POP DE", 1, 3),       ("JP NC,u16", 3, 4),        ("INT 0x40", 1, 5),     ("CALL NC,u16", 3, 6),  ("PUSH DE", 1, 4),      ("SUB A,u8", 2, 2),     ("RST 0x10", 1, 4),     ("RET C", 1, 5),        ("RETI", 1, 4),         ("JP C,u16", 3, 4),     ("INT 0x60", 1, 5), ("CALL C,u16", 3, 6),   ("", 0, 0),         ("SBC A,u8", 2, 2),     ("RST 0x18", 1, 4),
+    ("LD (0xFF00+u8),A", 2, 3), ("POP HL", 1, 3),       ("LD (0xFF00+C),A", 1, 2),  ("INT 0x48", 1, 5),     ("INT 0x50", 1, 5),     ("PUSH HL", 1, 4),      ("AND A,u8", 2, 2),     ("RST 0x20", 1, 4),     ("ADD SP,i8", 2, 4),    ("JP HL", 1, 1),        ("LD (u16),A", 3, 4),   ("", 0, 0),         ("", 0, 0),             ("", 0, 0),         ("XOR A,u8", 2, 2),     ("RST 0x28", 1, 4),
+    ("LD A,(0xFF00+u8)", 2, 3), ("POP AF", 1, 3),       ("LD A,(0xFF00+C)", 1, 2),  ("DI", 1, 1),           ("INT 0x58", 1, 5),     ("PUSH AF", 1, 4),      ("OR A,u8", 2, 2),      ("RST 0x30", 1, 4),     ("LD HL,SP+i8", 2, 3),  ("LD SP,HL", 1, 2),     ("LD A,(u16)", 3, 4),   ("EI", 1, 1),       ("", 0, 0),             ("", 0, 0),         ("CP A,u8", 2, 2),      ("RST 0x38", 1, 4),
 ];
 
 

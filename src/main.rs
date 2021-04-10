@@ -6,6 +6,7 @@ mod bus;
 mod visualizer;
 mod gpu;
 mod timer;
+mod cartridge;
 extern crate sfml;
 use sfml::{
     graphics::{
@@ -17,31 +18,27 @@ use std::{thread, time};
 
 
 fn main() {
+    let cart = cartridge::Cartridge::new(String::from("roms/tetris.gb"));
+
+    
     let font = Font::from_file("fonts/RobotoMono-Medium.ttf").unwrap();
     
     let mut c = cpu::Z80::new();
 
-    c.pc = 0xC000;
-    c.sp = 0xC010;
+    c.bus.insertCartridge(cart);
+    c.reset();
 
-    c.writeByte(0xFF07, 0b101);
-    c.writeByte(0xFF05, 250);
-    c.writeByte(0xFF06, 250);
-
-    c.writeByte(0xC000, 0x01);
-    c.writeByte(0xC001, 0xff);
-    c.writeByte(0xC002, 0x01);
-    c.writeByte(0xC003, 0x03);
+    c.pc = 0x0100;
 
     let mut window = RenderWindow::new((1280, 720),
             "GBA Emulator - Badjaba",
             Style::CLOSE,
             &ContextSettings::default());
 
-    window.set_framerate_limit(30);
+    //window.set_framerate_limit(300);
     //window.draw(&t);
-    let mut ramPage1 = 0xC000;
-    let mut ramPage2 = 0xD000;
+    let mut ramPage1 = 0x0100;
+    let mut ramPage2 = 0x020C;
     
 
 
@@ -70,6 +67,7 @@ fn main() {
             }
         }
         window.clear(Color::BLUE);
+        //c.clock();
         visualizer::renderFullDissassembly(&c, ramPage1, ramPage2, &font, &mut window);
         window.display();
     }
